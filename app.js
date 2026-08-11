@@ -227,7 +227,7 @@ function renderGallery() {
   const g = document.querySelector("#workGrid");
   if (!g) return;
   g.innerHTML = content.gallery.map((ph, i) => `
-    <figure data-gindex="${i}"><img src="${ph.src}" alt="${esc(ph.cap || "")}" />
+    <figure data-gindex="${i}"><img src="${esc(ph.src)}" alt="${esc(ph.cap || "")}" />
       <figcaption data-edit="gallery.${i}.cap">${esc(ph.cap || "")}</figcaption></figure>`).join("");
   window.__CR_bindLightbox && window.__CR_bindLightbox();
 }
@@ -248,15 +248,25 @@ function renderCities() {
   if (!ul) return;
   ul.innerHTML = content.area.cities.map((c, i) => `<li data-edit="area.cities.${i}">${esc(c)}</li>`).join("");
 }
+function safeUrl(u) {
+  try { const x = new URL(u, location.href); return (x.protocol === "https:" || x.protocol === "http:") ? x.href : ""; }
+  catch { return ""; }
+}
 function renderSocial() {
   const box = document.querySelector("#socialLinks");
   if (box) {
-    const s = content.social, links = [];
-    if (s.ig) links.push(`<a href="https://instagram.com/${s.ig.replace(/^@/, "")}" target="_blank" rel="noopener">Instagram</a>`);
-    if (s.fb) links.push(`<a href="${s.fb}" target="_blank" rel="noopener">Facebook</a>`);
-    if (s.yelp) links.push(`<a href="${s.yelp}" target="_blank" rel="noopener">Yelp</a>`);
-    if (s.nextdoor) links.push(`<a href="${s.nextdoor}" target="_blank" rel="noopener">Nextdoor</a>`);
-    box.innerHTML = links.join("");
+    box.textContent = "";                         // clear without innerHTML sink
+    const s = content.social;
+    const add = (url, label) => {
+      const u = safeUrl(url); if (!u) return;      // protocol allowlist blocks javascript: etc.
+      const a = document.createElement("a");
+      a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = label;
+      box.appendChild(a);
+    };
+    if (s.ig) add("https://instagram.com/" + String(s.ig).replace(/^@/, "").replace(/[^A-Za-z0-9_.]/g, ""), "Instagram");
+    if (s.fb) add(s.fb, "Facebook");
+    if (s.yelp) add(s.yelp, "Yelp");
+    if (s.nextdoor) add(s.nextdoor, "Nextdoor");
   }
   // IG feed
   const feed = document.querySelector("#igFeed");
@@ -399,7 +409,7 @@ function pickImage() {
     inp.click();
   });
 }
-async function compress(file, maxW = 1400, quality = 0.82) {
+async function compress(file, maxW = 1100, quality = 0.72) {
   const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
   const scale = Math.min(1, maxW / img.width);
   const cv = document.createElement("canvas");
@@ -458,6 +468,7 @@ function setByPath(obj, path, val) {
 async function saveContent() {
   if (!currentUser) return alert("Sign in first.");
   collectEdits();
+  if (docSizeKB() > 950) return alert("This page is near the 1 MB storage limit (mostly photos). Remove a photo or two before saving, then try again.");
   const btn = document.getElementById("crSaveBtn");
   btn.textContent = "Saving…"; btn.disabled = true;
   try {
@@ -477,11 +488,107 @@ window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault()
 /* ============================================================
    SETTINGS DRAWER  +  BOOKINGS  (built next pass — stubs wired)
    ============================================================ */
-function openSettings() { window.__CR_openSettings ? window.__CR_openSettings(content, saveMeta) : alert("Settings drawer loads with settings.js"); }
-function openBookings() { window.__CR_openBookings ? window.__CR_openBookings(db, SITE_ID) : alert("Bookings view loads with settings.js"); }
+function docSizeKB() { return Math.round(new Blob([JSON.stringify(content)]).size / 1024); }
+
+function drawer(title, bodyHtml) {
+  let d = document.getElementById("crDrawer");
+  if (d) d.remove();
+  d = document.createElement("div");
+  d.id = "crDrawer";
+  d.innerHTML = `<div class="crd-scrim"></div><div class="crd-panel"><div class="crd-head"><h3></h3><button class="crd-x" aria-label="Close">&times;</button></div><div class="crd-body"></div></div>`;
+  d.querySelector("h3").textContent = title;
+  d.querySelector(".crd-body").innerHTML = bodyHtml;   // owner-only content, values set via .value below
+  document.body.appendChild(d);
+  const close = () => d.remove();
+  d.querySelector(".crd-x").onclick = close;
+  d.querySelector(".crd-scrim").onclick = close;
+  return d;
+}
+
+function openSettings() {
+  if (!currentUser) return;
+  const s = content.social, b = content.booking, sec = content.sections;
+  const kb = docSizeKB();
+  const pct = Math.min(100, Math.round(kb / 1024 * 100));
+  const d = drawer("Settings", `
+    <label class="crf">Instagram handle <input id="setIg" placeholder="@yourhandle"></label>
+    <label class="crf crf-row"><span>Show Instagram feed on the site</span><input id="setIgFeed" type="checkbox"></label>
+    <label class="crf">Facebook URL <input id="setFb"></label>
+    <label class="crf">Yelp URL <input id="setYelp"></label>
+    <label class="crf">Nextdoor URL <input id="setNd"></label>
+    <hr>
+    <label class="crf">Hours <input id="setHours"></label>
+    <label class="crf">Where booking emails go <input id="setNotify"></label>
+    <label class="crf">Accent color <input id="setAccent" type="color"></label>
+    <hr>
+    <div class="crf"><b>Show / hide sections</b>
+      <label class="crf-row"><span>Pricing</span><input data-sec="pricing" type="checkbox"></label>
+      <label class="crf-row"><span>Our work</span><input data-sec="work" type="checkbox"></label>
+      <label class="crf-row"><span>Story</span><input data-sec="story" type="checkbox"></label>
+      <label class="crf-row"><span>Reviews</span><input data-sec="reviews" type="checkbox"></label>
+      <label class="crf-row"><span>Service area</span><input data-sec="area" type="checkbox"></label>
+      <label class="crf-row"><span>Instagram feed</span><input data-sec="igfeed" type="checkbox"></label>
+    </div>
+    <hr>
+    <div class="crf"><b>Page storage</b><div class="crmeter"><span style="width:${pct}%"></span></div>
+      <small>${kb} KB of 1024 KB used (photos live here — keep it under the line).</small></div>
+    <hr>
+    <div class="crf"><b>Your account</b><br><button id="setPw" class="crbtn">Send me a password reset link</button></div>
+    <div class="crf"><b>Connect a domain</b><br><small>Point your domain's DNS to GitHub Pages, then add a CNAME file. Send this to your web person or ask here and we'll do it.</small></div>
+    <button id="setSave" class="crbtn crbtn-primary">Save settings</button>
+  `);
+  // populate values safely (no HTML injection)
+  d.querySelector("#setIg").value = s.ig || "";
+  d.querySelector("#setIgFeed").checked = !!s.igFeedOn;
+  d.querySelector("#setFb").value = s.fb || "";
+  d.querySelector("#setYelp").value = s.yelp || "";
+  d.querySelector("#setNd").value = s.nextdoor || "";
+  d.querySelector("#setHours").value = content.hours || "";
+  d.querySelector("#setNotify").value = b.notifyEmail || "";
+  d.querySelector("#setAccent").value = content.brand.accent || "#E5362E";
+  d.querySelectorAll("[data-sec]").forEach(cb => { cb.checked = !!sec[cb.dataset.sec]; });
+  d.querySelector("#setPw").onclick = () => sendPasswordResetEmail(auth, currentUser.email)
+    .then(() => alert("Password reset link sent to " + currentUser.email))
+    .catch(e => alert("Failed: " + e.code));
+  d.querySelector("#setSave").onclick = async () => {
+    s.ig = d.querySelector("#setIg").value.trim();
+    s.igFeedOn = d.querySelector("#setIgFeed").checked;
+    s.fb = d.querySelector("#setFb").value.trim();
+    s.yelp = d.querySelector("#setYelp").value.trim();
+    s.nextdoor = d.querySelector("#setNd").value.trim();
+    content.hours = d.querySelector("#setHours").value.trim();
+    b.notifyEmail = d.querySelector("#setNotify").value.trim();
+    content.brand.accent = d.querySelector("#setAccent").value;
+    d.querySelectorAll("[data-sec]").forEach(cb => { sec[cb.dataset.sec] = cb.checked; });
+    try { await saveMeta(); hydrate(); d.remove(); }
+    catch (e) { alert("Save failed: " + (e.code || e.message)); }
+  };
+}
+
+async function openBookings() {
+  if (!currentUser) return;
+  const d = drawer("Bookings", `<div id="bkList">Loading…</div>`);
+  try {
+    const q = query(collection(db, "sites", SITE_ID, "bookings"), orderBy("created", "desc"));
+    const snap = await getDocs(q);
+    const list = d.querySelector("#bkList");
+    list.textContent = "";
+    if (snap.empty) { list.textContent = "No bookings yet. They'll appear here the moment someone books."; return; }
+    snap.forEach(doc => {
+      const b = doc.data();
+      const card = document.createElement("div");
+      card.className = "bk-card";
+      const line = (k, v) => { if (!v) return; const p = document.createElement("div"); p.innerHTML = `<b></b> <span></span>`; p.querySelector("b").textContent = k + ":"; p.querySelector("span").textContent = v; card.appendChild(p); };
+      line("Name", b.name); line("Phone", b.phone); line("Package", b.package);
+      line("Vehicle", b.vehicle); line("Estimate", b.estimate); line("Add-ons", b.addons);
+      line("Date", b.date); line("Time", b.time); line("Where", b.address);
+      list.appendChild(card);
+    });
+  } catch (e) { d.querySelector("#bkList").textContent = "Could not load bookings: " + (e.code || e.message); }
+}
+
 async function saveMeta() { await setDoc(siteRef, content, { merge: false }); }
 window.__CR_content = () => content;
-window.__CR_auth = { auth, sendPasswordResetEmail, OWNERS };
 
 /* ---- owner bar styles ---- */
 function injectOwnerStyles() {
@@ -496,6 +603,23 @@ function injectOwnerStyles() {
   body.cr-editing [data-edit]{outline:1px dashed rgba(46,134,242,.7);outline-offset:2px;cursor:text;min-width:12px;display:inline-block}
   body.cr-editing [data-edit]:focus{outline:2px solid #2E86F2;background:rgba(46,134,242,.08)}
   .cr-adder{display:inline-block;margin:10px auto;background:#123;color:#8cf;border:1px dashed #2E86F2;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}
+  #crDrawer{position:fixed;inset:0;z-index:10000;font-family:system-ui,sans-serif}
+  #crDrawer .crd-scrim{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+  #crDrawer .crd-panel{position:absolute;top:0;right:0;height:100%;width:min(420px,92vw);background:#14161a;color:#e8eef4;box-shadow:-10px 0 40px rgba(0,0,0,.5);display:flex;flex-direction:column}
+  #crDrawer .crd-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid #262b33}
+  #crDrawer .crd-head h3{margin:0;font-size:1.05rem}
+  #crDrawer .crd-x{background:none;border:0;color:#9aa;font-size:26px;cursor:pointer;line-height:1}
+  #crDrawer .crd-body{padding:18px;overflow:auto}
+  #crDrawer hr{border:0;border-top:1px solid #262b33;margin:16px 0}
+  .crf{display:block;margin:0 0 12px;font-size:.85rem;color:#aeb8c4}
+  .crf input:not([type=checkbox]):not([type=color]){display:block;width:100%;margin-top:5px;padding:9px 10px;background:#0f1114;border:1px solid #2b323b;border-radius:6px;color:#fff;font-size:.9rem}
+  .crf-row{display:flex;justify-content:space-between;align-items:center;margin:7px 0}
+  .crmeter{height:8px;background:#0f1114;border:1px solid #2b323b;border-radius:5px;overflow:hidden;margin:6px 0}
+  .crmeter span{display:block;height:100%;background:linear-gradient(90deg,#2E86F2,#E5362E)}
+  .crbtn{background:#222833;color:#dce4ee;border:1px solid #333c48;border-radius:6px;padding:9px 14px;font-size:.85rem;cursor:pointer;margin-top:8px}
+  .crbtn-primary{background:var(--accent,#E5362E);border-color:var(--accent,#E5362E);color:#fff;width:100%;margin-top:16px;padding:12px}
+  .bk-card{background:#0f1114;border:1px solid #262b33;border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:.85rem}
+  .bk-card b{color:#8fa1b5;font-weight:600}
   `;
   document.head.appendChild(s);
 }
