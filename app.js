@@ -347,17 +347,28 @@ function mountOwnerBar() {
 }
 
 function openLogin() {
-  const email = prompt("Owner email:");
-  if (!email) return;
-  const pw = prompt("Password:\n\n(First time? Leave this blank and press OK to get a 'set your password' email.)");
-  if (pw) {
-    signInWithEmailAndPassword(auth, email.trim(), pw)
-      .catch(err => alert("Sign in failed: " + err.code + "\n\nIf this is your first time, leave the password blank to set one."));
-  } else {
-    sendPasswordResetEmail(auth, email.trim())
-      .then(() => alert("Check " + email + " — we sent a link to set your password. Set it, then sign in again."))
-      .catch(err => alert("Could not send reset email: " + err.code));
-  }
+  const d = drawer("Owner sign in", `
+    <label class="crf">Email <input id="loginEmail" type="email" autocomplete="username"></label>
+    <label class="crf">Password <input id="loginPw" type="password" autocomplete="current-password"></label>
+    <p class="crf" id="loginMsg" style="min-height:1.1em;margin:0 0 6px"></p>
+    <button id="loginGo" class="crbtn crbtn-primary">Sign in</button>
+    <button id="loginSet" class="crbtn" style="width:100%">First time or forgot? Email me a set-password link</button>
+  `);
+  const emailEl = d.querySelector("#loginEmail");
+  const msg = (t, ok) => { const m = d.querySelector("#loginMsg"); m.textContent = t; m.style.color = ok ? "#7fd47f" : "#f08a8a"; };
+  d.querySelector("#loginGo").onclick = () => {
+    msg("Signing in…");
+    signInWithEmailAndPassword(auth, emailEl.value.trim(), d.querySelector("#loginPw").value)
+      .then(() => d.remove())
+      .catch(e => msg("Sign in failed (" + e.code + ")."));
+  };
+  d.querySelector("#loginSet").onclick = () => {
+    const em = emailEl.value.trim();
+    if (!em) return msg("Enter your email first.");
+    sendPasswordResetEmail(auth, em)
+      .then(() => msg("Sent — check " + em + " for a link to set your password.", true))
+      .catch(e => msg("Couldn't send (" + e.code + ")."));
+  };
 }
 
 /* ============================================================
