@@ -31,23 +31,6 @@ a{color:inherit}
 #app{display:none;min-height:100vh;grid-template-columns:230px 1fr}
 #mEdit{display:none}
 #tabbar{display:none}
-@media(max-width:760px){
-  #app{grid-template-columns:1fr}
-  #side{display:none}
-  #menuBtn{display:none}
-  main{padding:16px 14px 92px;max-width:100%}
-  .topbar{margin-bottom:16px}
-  .topbar h2{font-size:1.2rem}
-  #whoami{display:none}
-  #mEdit{display:inline-flex!important}
-  .cards{grid-template-columns:1fr 1fr}
-  .grid2{grid-template-columns:1fr}
-  #tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--panel);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
-  #tabbar a{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;color:var(--muted);font-size:.64rem;text-decoration:none;border-radius:9px;font-weight:600}
-  #tabbar a.active{color:#fff;background:var(--panel2)}
-  #tabbar a .ic{font-size:1.15rem;line-height:1}
-  #tabbar a.has::after{content:"";position:absolute;top:5px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--accent)}
-}
 #side{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;width:230px}
 .brand{font-weight:800;font-size:1.05rem;letter-spacing:-.01em;padding:6px 10px 16px}
 .brand small{display:block;color:var(--muted);font-weight:500;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
@@ -85,6 +68,24 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
 .hint{color:var(--muted);font-size:.82rem}
 .view{display:none}.view.on{display:block}
 @media(max-width:600px){.row{grid-template-columns:1fr;gap:6px}.acts{justify-content:flex-start}}
+/* ---- mobile: bottom tab bar, no hamburger digging (placed last so it wins) ---- */
+@media(max-width:760px){
+  #app{grid-template-columns:1fr!important}
+  #side{display:none!important}
+  #menuBtn{display:none!important}
+  main{padding:16px 14px 96px!important;max-width:100%!important}
+  .topbar{margin-bottom:16px}
+  .topbar h2{font-size:1.2rem}
+  #whoami{display:none!important}
+  #mEdit{display:inline-flex!important}
+  .cards{grid-template-columns:1fr 1fr!important}
+  .grid2{grid-template-columns:1fr!important}
+  #tabbar{display:flex!important;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--panel);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  #tabbar a{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;color:var(--muted);font-size:.64rem;text-decoration:none;border-radius:9px;font-weight:600}
+  #tabbar a.active{color:#fff;background:var(--panel2)}
+  #tabbar a .ic{font-size:1.15rem;line-height:1}
+  #tabbar a.has::after{content:"";position:absolute;top:5px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--accent)}
+}
 </style>
 </head>
 <body>
