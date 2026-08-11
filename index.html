@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="./styles.css?v=3" />
+<link rel="stylesheet" href="./styles.css?v=4" />
 </head>
 <body>
 
@@ -134,7 +134,7 @@
 <section class="end">
   <div class="shell end-in">
     <h2>Ready when you are.</h2>
-    <p>Build your quote in a minute, or just call <span data-field="business.owner">James</span>. We come to you across Denver's north metro.</p>
+    <p>Build your quote in a minute, or just call us. We come to you across the north Denver metro.</p>
     <div class="hero-act">
       <a class="btn" href="#pricing">Build your quote</a>
       <a class="btn-quiet" data-phone data-phone-text href="tel:+13035898214">Call or Text (303) 589-8214</a>
@@ -146,7 +146,7 @@
   <div class="shell foot-in">
     <div>
       <a class="logo" href="#top" data-field="business.name">Colorado&nbsp;<span data-field="business.nameSub">Reflections</span></a>
-      <p class="foot-note">Mobile auto, boat, RV &amp; motorcycle detailing by <span data-field="business.owner">James</span>. We come to you.</p>
+      <p class="foot-note">Mobile auto, boat, RV &amp; motorcycle detailing. We come to you.</p>
     </div>
     <div class="foot-col">
       <span class="foot-h">Hours</span>
@@ -154,7 +154,7 @@
     </div>
     <div class="foot-col">
       <span class="foot-h">Contact</span>
-      <p><a data-phone href="tel:+13035898214">(303) 589-8214</a><br><a data-email href="mailto:corefmobiledetail@gmail.com">corefmobiledetail@gmail.com</a><br><span data-field="business.license">Lic. 86-1229005</span></p>
+      <p><a data-phone href="tel:+13035898214">(303) 589-8214</a><br><a data-email href="mailto:corefmobiledetail@gmail.com">corefmobiledetail@gmail.com</a><br><span data-field="business.license">Lic. 86-1229005</span><br><a href="./admin.html" style="opacity:.4;font-size:.72rem">Owner sign in</a></p>
     </div>
   </div>
 </footer>
@@ -187,12 +187,12 @@
         <div class="bk-field"><label class="build-label" for="bkName">Name</label><input type="text" id="bkName" class="bk-input" autocomplete="name" /></div>
         <div class="bk-field"><label class="build-label" for="bkPhone">Mobile</label><input type="tel" id="bkPhone" class="bk-input" autocomplete="tel" placeholder="(720) 555-0199" /></div>
       </div>
-      <div class="bk-field"><label class="build-label" for="bkEmail">Email <span style="opacity:.6">(optional — for updates &amp; offers)</span></label><input type="email" id="bkEmail" class="bk-input" autocomplete="email" /></div>
-      <div class="bk-field"><label class="build-label" for="bkAddr">Where we're coming (address or area)</label><input type="text" id="bkAddr" class="bk-input" autocomplete="street-address" placeholder="Street, city" /></div>
+      <div class="bk-field"><label class="build-label" for="bkEmail">Email <span style="opacity:.6">(optional)</span></label><input type="email" id="bkEmail" class="bk-input" autocomplete="email" /></div>
+      <div class="bk-field bk-addr"><label class="build-label" for="bkAddr">Where we're coming (address or area)</label><input type="text" id="bkAddr" class="bk-input" autocomplete="off" placeholder="Start typing your address…" /><div class="addr-sug" id="bkAddrSug" hidden></div></div>
       <div class="bk-field" id="bkPhotoField"><label class="build-label">Add photos of your vehicle (optional)</label><input type="file" id="bkPhotos" accept="image/*" multiple /></div>
       <p class="bk-err" id="bkErr" hidden>Add your name and a mobile number so we can confirm.</p>
       <button type="button" class="btn btn-block" id="bkSubmit">Request this time</button>
-      <p class="est-fine">No charge yet. James texts you to confirm the time and final price, then you're booked.</p>
+      <p class="est-fine">No charge yet. We text you to confirm the time and final price, then you're booked.</p>
     </div>
     <div class="bk-step" id="bkDone" hidden>
       <div class="bk-check" aria-hidden="true">✓</div>
@@ -206,7 +206,7 @@
 </div>
 
 <script src="./firebase-config.js"></script>
-<script type="module" src="./app.js?v=6"></script>
+<script type="module" src="./app.js?v=7"></script>
 
 <!-- Quote engine + booking + lightbox + map (coordinates with app.js via window.__CR_*) -->
 <script>
@@ -301,10 +301,42 @@
     var lines=['Detail request — '+name]; if(q.hasPkg) lines.push(q.pkg+(q.veh?' ('+q.veh+')':'')+' — '+money(q.total)+' est.');
     if(date) lines.push('Date: '+date); if(t) lines.push('Time: '+t.value); if(addr) lines.push('Location: '+addr); lines.push('Phone: '+phone);
     document.getElementById('bkText').href='sms:'+PHONERAW+'?&body='+encodeURIComponent(lines.join('\n'));
-    document.getElementById('bkDoneNote').textContent='James will text '+phone+' to confirm your time'+(date?' on '+date:'')+' and the final price.';
+    document.getElementById('bkDoneNote').textContent="We'll text "+phone+' to confirm your time'+(date?' on '+date:'')+' and the final price.';
     stepForm.hidden=true; stepDone.hidden=false;
   });
   document.getElementById('bkRestart').addEventListener('click', function(){ stepDone.hidden=true; stepForm.hidden=false; });
+
+  /* address autocomplete — free Photon geocoder (no key/billing), graceful fallback to plain text */
+  (function(){
+    var addr=document.getElementById('bkAddr'), sug=document.getElementById('bkAddrSug'), t;
+    if(!addr||!sug) return;
+    function hide(){ sug.hidden=true; sug.innerHTML=''; }
+    addr.addEventListener('input', function(){
+      clearTimeout(t); var q=addr.value.trim();
+      if(q.length<4){ hide(); return; }
+      t=setTimeout(function(){
+        fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&lat=39.87&lon=-104.98&limit=5')
+          .then(function(r){return r.json();})
+          .then(function(d){
+            var feats=(d&&d.features)||[];
+            sug.innerHTML='';
+            feats.forEach(function(f){
+              var p=f.properties||{}, parts=[];
+              if(p.housenumber&&p.street) parts.push(p.housenumber+' '+p.street);
+              else if(p.street) parts.push(p.street); else if(p.name) parts.push(p.name);
+              if(p.city||p.town||p.village) parts.push(p.city||p.town||p.village);
+              if(p.state) parts.push(p.state);
+              var label=parts.join(', '); if(!label) return;
+              var div=document.createElement('div'); div.className='addr-opt'; div.textContent=label;
+              div.addEventListener('mousedown', function(e){ e.preventDefault(); addr.value=label; hide(); });
+              sug.appendChild(div);
+            });
+            sug.hidden = sug.children.length===0;
+          }).catch(hide);
+      }, 300);
+    });
+    addr.addEventListener('blur', function(){ setTimeout(hide, 150); });
+  })();
 
   /* service-area map */
   window.addEventListener('load', function(){

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — Colorado Reflections</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230C0C0D'/%3E%3Ctext x='32' y='44' font-family='Arial' font-size='28' font-weight='800' fill='%23E5362E' text-anchor='middle'%3ECR%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root{--bg:#0c0d10;--panel:#14161b;--panel2:#191c22;--line:#252a32;--text:#e8edf3;--muted:#9aa6b4;--accent:#E5362E;--ok:#7fd47f;--warn:#f5c451}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:15px}
+a{color:inherit}
+/* login */
+#login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login-card{width:min(380px,94vw);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px}
+.login-card h1{font-size:1.2rem;margin:0 0 4px}.login-card p{color:var(--muted);margin:0 0 18px;font-size:.9rem}
+.fld{display:block;margin:0 0 12px;font-size:.82rem;color:var(--muted)}
+.fld input,.fld textarea,.fld select{display:block;width:100%;margin-top:5px;padding:11px 12px;background:#0f1114;border:1px solid var(--line);border-radius:8px;color:#fff;font-size:.95rem;font-family:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 15px;font-size:.88rem;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:#39414c}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-danger{background:#3a1618;border-color:#5a2327;color:#ff9aa2}
+.btn-block{width:100%}
+.msg{min-height:1.1em;font-size:.85rem;margin:4px 0 0}
+/* shell */
+#app{display:none;min-height:100vh;grid-template-columns:230px 1fr}
+@media(max-width:760px){#app{grid-template-columns:1fr}#side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%);transition:transform .2s;z-index:40;box-shadow:8px 0 40px rgba(0,0,0,.6)}#app.nav-open #side{transform:none}#menuBtn{display:inline-flex!important}}
+#side{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;width:230px}
+.brand{font-weight:800;font-size:1.05rem;letter-spacing:-.01em;padding:6px 10px 16px}
+.brand small{display:block;color:var(--muted);font-weight:500;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.navlink{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--muted);cursor:pointer;font-weight:500}
+.navlink:hover{background:var(--panel2);color:var(--text)}
+.navlink.active{background:var(--panel2);color:var(--text)}
+.navlink .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-left:auto;display:none}
+.navlink.has .dot{display:block}
+.side-foot{margin-top:auto;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.topbar h2{margin:0;font-size:1.35rem}
+.topbar .right{display:flex;gap:8px;flex-wrap:wrap}
+#menuBtn{display:none}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:8px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.stat .n{font-size:1.9rem;font-weight:700;font-family:"JetBrains Mono",monospace}
+.stat .l{color:var(--muted);font-size:.82rem;margin-top:2px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;margin-top:18px;overflow:hidden}
+.row{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:12px;align-items:center;padding:13px 14px;border-bottom:1px solid var(--line);font-size:.9rem}
+.row:last-child{border-bottom:none}
+.row .sub{color:var(--muted);font-size:.8rem}
+.badge{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.b-new{background:#3a2f12;color:var(--warn)}.b-confirmed{background:#12331f;color:var(--ok)}.b-done{background:#22262c;color:var(--muted)}.b-repeat{background:#12331f;color:var(--ok)}.b-newc{background:#22262c;color:var(--muted)}
+.acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.acts .btn{padding:6px 10px;font-size:.78rem}
+.empty{padding:34px;text-align:center;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card h3{margin:0 0 14px;font-size:1rem}
+.meter{height:9px;background:#0f1114;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:8px 0}
+.meter span{display:block;height:100%;background:linear-gradient(90deg,#2E86F2,var(--accent))}
+.togg{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.togg:last-child{border-bottom:none}
+.hint{color:var(--muted);font-size:.82rem}
+.view{display:none}.view.on{display:block}
+@media(max-width:600px){.row{grid-template-columns:1fr;gap:6px}.acts{justify-content:flex-start}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-card">
+    <h1>Colorado Reflections</h1>
+    <p>Owner sign in</p>
+    <label class="fld">Email <input id="lEmail" type="email" autocomplete="username"></label>
+    <label class="fld">Password <input id="lPw" type="password" autocomplete="current-password"></label>
+    <p class="msg" id="lMsg"></p>
+    <button class="btn btn-primary btn-block" id="lGo" style="margin-bottom:8px">Sign in</button>
+    <button class="btn btn-block" id="lSet">First time or forgot? Email me a set-password link</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <aside id="side">
+    <div class="brand">Colorado Reflections<small>Admin</small></div>
+    <div class="navlink active" data-view="overview">Overview</div>
+    <div class="navlink" data-view="bookings">Bookings <span class="dot"></span></div>
+    <div class="navlink" data-view="customers">Customers</div>
+    <div class="navlink" data-view="promos">Promos</div>
+    <div class="navlink" data-view="settings">Settings</div>
+    <div class="side-foot">
+      <a class="btn" href="./index.html?edit=1">✎ Edit site</a>
+      <a class="btn" href="./index.html" target="_blank">↗ View site</a>
+      <button class="btn" id="signout">Sign out</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <button class="btn" id="menuBtn">☰</button>
+      <h2 id="viewTitle">Overview</h2>
+      <div class="right"><span class="hint" id="whoami"></span></div>
+    </div>
+
+    <section class="view on" id="v-overview">
+      <div class="cards" id="statCards"></div>
+      <div class="panel" id="recentBookings"></div>
+    </section>
+
+    <section class="view" id="v-bookings"><div class="panel" id="bookingsPanel"><div class="empty">Loading…</div></div></section>
+    <section class="view" id="v-customers"><div class="panel" id="customersPanel"><div class="empty">Loading…</div></div></section>
+
+    <section class="view" id="v-promos">
+      <div class="card">
+        <h3>Send a promo</h3>
+        <p class="hint" id="promoAud"></p>
+        <label class="fld">Subject <input id="pSubj" placeholder="20% off your next detail"></label>
+        <label class="fld">Message <textarea id="pMsg" rows="5"></textarea></label>
+        <p class="hint" id="pMode"></p>
+        <div class="right" style="margin-top:8px"><button class="btn btn-primary" id="pSend">Send email promo</button><button class="btn" id="pCopy">Copy phone list for texting</button></div>
+        <p class="msg" id="pOut"></p>
+      </div>
+    </section>
+
+    <section class="view" id="v-settings"><div class="grid2" id="settingsGrid"></div></section>
+  </main>
+</div>
+
+<script src="./firebase-config.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const SITE_ID = "colorado-reflections";
+const OWNERS = ["corefmobiledetail@gmail.com","carsonhanna5@gmail.com"];
+const app = initializeApp(window.FIREBASE_CONFIG);
+const auth = getAuth(app), db = getFirestore(app);
+const siteRef = doc(db,"sites",SITE_ID);
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => "$"+Number(n).toLocaleString();
+const priceNum = e => { const m=/\d[\d,]*/.exec(String(e||"")); return m?+m[0].replace(/,/g,""):0; };
+
+let content=null, bookings=[], user=null;
+
+/* ---- auth ---- */
+$("#lGo").onclick = () => { $("#lMsg").textContent="Signing in…"; signInWithEmailAndPassword(auth,$("#lEmail").value.trim(),$("#lPw").value).catch(e=>$("#lMsg").textContent="Sign in failed ("+e.code+")."); };
+$("#lSet").onclick = () => { const em=$("#lEmail").value.trim(); if(!em){$("#lMsg").textContent="Enter your email first.";return;} sendPasswordResetEmail(auth,em).then(()=>{$("#lMsg").style.color="var(--ok)";$("#lMsg").textContent="Sent — check "+em+" to set your password.";}).catch(e=>$("#lMsg").textContent="Couldn't send ("+e.code+")."); };
+$("#signout").onclick = () => signOut(auth);
+$("#lPw").addEventListener("keydown",e=>{if(e.key==="Enter")$("#lGo").click();});
+
+onAuthStateChanged(auth, async (u) => {
+  user = (u && OWNERS.includes(u.email)) ? u : null;
+  if (!user) { $("#login").style.display="grid"; $("#app").style.display="none"; if(u) signOut(auth); return; }
+  $("#login").style.display="none"; $("#app").style.display="grid";
+  $("#whoami").textContent = user.email;
+  await loadAll();
+});
+
+async function loadAll(){
+  try { const s=await getDoc(siteRef); content = s.exists()?s.data():{}; } catch(e){ content={}; }
+  try { const snap=await getDocs(query(collection(db,"sites",SITE_ID,"bookings"),orderBy("created","desc"))); bookings=[]; snap.forEach(d=>bookings.push({id:d.id,...d.data()})); } catch(e){ bookings=[]; }
+  renderOverview(); renderBookings(); renderCustomers(); renderSettings(); renderPromoMeta();
+  const newCount = bookings.filter(b=>(b.status||"new")==="new").length;
+  document.querySelector('[data-view="bookings"]').classList.toggle("has", newCount>0);
+}
+
+/* ---- nav ---- */
+document.querySelectorAll(".navlink").forEach(n => n.onclick = () => {
+  document.querySelectorAll(".navlink").forEach(x=>x.classList.remove("active"));
+  n.classList.add("active");
+  const v=n.dataset.view;
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  $("#v-"+v).classList.add("on");
+  $("#viewTitle").textContent = n.textContent.trim().replace("●","");
+  $("#app").classList.remove("nav-open");
+});
+$("#menuBtn").onclick = () => $("#app").classList.toggle("nav-open");
+
+/* ---- overview ---- */
+function customersFromBookings(){
+  const map={};
+  bookings.forEach(b=>{ const k=(b.phone||b.name||"").replace(/\D/g,"")||b.name||"?"; (map[k]=map[k]||{name:b.name,phone:b.phone,email:b.email,visits:[],total:0}).visits.push(b); });
+  return Object.values(map).map(c=>{ c.total=c.visits.reduce((s,v)=>s+priceNum(v.estimate),0); c.email=c.email||c.visits.map(v=>v.email).find(Boolean)||""; c.count=c.visits.length; return c; }).sort((a,b)=>b.count-a.count);
+}
+function renderOverview(){
+  const custs=customersFromBookings();
+  const revenue=bookings.reduce((s,b)=>s+priceNum(b.estimate),0);
+  const stats=[["New bookings",bookings.filter(b=>(b.status||"new")==="new").length],["Total bookings",bookings.length],["Customers",custs.length],["Repeat",custs.filter(c=>c.count>1).length],["Est. pipeline",money(revenue)]];
+  $("#statCards").innerHTML = stats.map(s=>`<div class="stat"><div class="n">${esc(s[1])}</div><div class="l">${esc(s[0])}</div></div>`).join("");
+  const recent=bookings.slice(0,5);
+  $("#recentBookings").innerHTML = `<div class="row" style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em"><span>Recent bookings</span><span></span><span></span><span></span></div>` +
+    (recent.length? recent.map(rowBooking).join("") : `<div class="empty">No bookings yet.</div>`);
+  bindRowActions($("#recentBookings"));
+}
+
+/* ---- bookings ---- */
+function rowBooking(b){
+  const st=b.status||"new";
+  return `<div class="row" data-id="${b.id}">
+    <div><b>${esc(b.name||"(no name)")}</b><div class="sub">${esc(b.phone||"")}${b.email?" · "+esc(b.email):""}</div></div>
+    <div>${esc(b.package||"")}${b.vehicle?" · "+esc(b.vehicle):""}<div class="sub">${esc(b.estimate||"")}</div></div>
+    <div>${esc(b.date||"—")}<div class="sub">${esc(b.time||"")}</div></div>
+    <div class="acts"><span class="badge b-${st}">${st}</span>
+      ${st==="new"?'<button class="btn" data-act="confirm">Confirm</button>':''}
+      ${st!=="done"?'<button class="btn" data-act="done">Done</button>':''}
+      <button class="btn btn-danger" data-act="del">Delete</button></div></div>`;
+}
+function renderBookings(){
+  $("#bookingsPanel").innerHTML = bookings.length ? bookings.map(rowBooking).join("") : `<div class="empty">No bookings yet. They'll appear here the moment someone books.</div>`;
+  bindRowActions($("#bookingsPanel"));
+}
+function bindRowActions(scope){
+  scope.querySelectorAll(".row[data-id]").forEach(row=>{
+    const id=row.dataset.id;
+    row.querySelectorAll("[data-act]").forEach(btn=>btn.onclick=async()=>{
+      const act=btn.dataset.act, ref=doc(db,"sites",SITE_ID,"bookings",id);
+      if(act==="del"){ if(!confirm("Delete this booking?"))return; await deleteDoc(ref); bookings=bookings.filter(b=>b.id!==id); }
+      else { const status=act==="confirm"?"confirmed":"done"; await updateDoc(ref,{status}); const b=bookings.find(x=>x.id===id); if(b)b.status=status; }
+      renderBookings(); renderOverview();
+    });
+  });
+}
+
+/* ---- customers ---- */
+function renderCustomers(){
+  const custs=customersFromBookings();
+  $("#customersPanel").innerHTML = custs.length ? custs.map(c=>`
+    <div class="row"><div><b>${esc(c.name||"(no name)")}</b><div class="sub">${esc(c.phone||"")}${c.email?" · "+esc(c.email):""}</div></div>
+      <div>${c.count} visit${c.count>1?"s":""}<div class="sub">last ${esc(c.visits[0].date||"—")}</div></div>
+      <div>${money(c.total)}<div class="sub">est. total</div></div>
+      <div class="acts"><span class="badge ${c.count>1?"b-repeat":"b-newc"}">${c.count>1?c.count+"× repeat":"new"}</span></div></div>`).join("")
+    : `<div class="empty">Customers show up here as bookings come in.</div>`;
+}
+
+/* ---- promos ---- */
+function renderPromoMeta(){
+  const custs=customersFromBookings();
+  const emails=custs.filter(c=>c.email).length, phones=custs.filter(c=>c.phone).length;
+  $("#promoAud").textContent = `${custs.length} customers · ${emails} with email · ${phones} with phone`;
+  $("#pSend").textContent = `Send email promo (${emails})`;
+  $("#pCopy").textContent = `Copy phone list (${phones})`;
+  const ej=content?.booking?.emailjs;
+  if(!(ej&&ej.serviceId&&ej.templateId&&ej.publicKey)){ $("#pMode").textContent="Email sending needs a free EmailJS key in Settings. You can still copy the phone list to text."; $("#pSend").disabled=true; }
+  else { $("#pMode").textContent=""; $("#pSend").disabled=false; }
+}
+$("#pCopy").onclick=()=>{ const phones=customersFromBookings().map(c=>c.phone).filter(Boolean); navigator.clipboard.writeText(phones.join(", ")).then(()=>{$("#pOut").style.color="var(--ok)";$("#pOut").textContent="Copied "+phones.length+" numbers.";}).catch(()=>$("#pOut").textContent="Copy failed."); };
+$("#pSend").onclick=async()=>{
+  const ej=content?.booking?.emailjs, subj=$("#pSubj").value.trim(), msg=$("#pMsg").value.trim();
+  if(!subj||!msg){$("#pOut").textContent="Add a subject and message.";return;}
+  $("#pOut").style.color="var(--muted)";$("#pOut").textContent="Sending…";
+  let sent=0; const custs=customersFromBookings().filter(c=>c.email);
+  for(const c of custs){ try{ await window.emailjs.send(ej.serviceId,ej.templateId,{to_email:c.email,to_name:c.name||"",subject:subj,message:msg},{publicKey:ej.publicKey}); sent++; }catch(e){} }
+  $("#pOut").style.color="var(--ok)";$("#pOut").textContent=`Sent to ${sent} of ${custs.length}.`;
+};
+
+/* ---- settings ---- */
+function renderSettings(){
+  const b=content.booking||(content.booking={}), s=content.social||(content.social={}), sec=content.sections||(content.sections={});
+  const kb=Math.round(new Blob([JSON.stringify(content)]).size/1024), pct=Math.min(100,Math.round(kb/1024*100));
+  $("#settingsGrid").innerHTML = `
+    <div class="card"><h3>Business & social</h3>
+      <label class="fld">Instagram handle <input id="sIg"></label>
+      <label class="fld">Facebook URL <input id="sFb"></label>
+      <label class="fld">Yelp URL <input id="sYelp"></label>
+      <label class="fld">Nextdoor URL <input id="sNd"></label>
+      <div class="togg"><span>Show Instagram feed</span><input id="sIgFeed" type="checkbox"></div>
+    </div>
+    <div class="card"><h3>Operations</h3>
+      <label class="fld">Hours <input id="sHours"></label>
+      <label class="fld">Booking notifications go to <input id="sNotify"></label>
+      <label class="fld">Accent color <input id="sAccent" type="color"></label>
+    </div>
+    <div class="card"><h3>Sections shown</h3>
+      ${["pricing","work","story","reviews","area","igfeed"].map(k=>`<div class="togg"><span>${k}</span><input data-sec="${k}" type="checkbox"></div>`).join("")}
+    </div>
+    <div class="card"><h3>Email sending (EmailJS)</h3><p class="hint">Free — powers booking emails & promos. Paste keys from emailjs.com.</p>
+      <label class="fld">Service ID <input id="ejService"></label>
+      <label class="fld">Template ID <input id="ejTemplate"></label>
+      <label class="fld">Public key <input id="ejKey"></label>
+    </div>
+    <div class="card"><h3>Storage</h3><div class="meter"><span style="width:${pct}%"></span></div>
+      <p class="hint">${kb} KB of 1024 KB used (photos live here).</p></div>
+    <div class="card"><h3>Account & domain</h3>
+      <button class="btn btn-block" id="sPw" style="margin-bottom:10px">Send me a password reset link</button>
+      <p class="hint">To connect a domain: point its DNS to GitHub Pages and add a CNAME. Ask us and we'll set it up.</p></div>
+    <div class="card" style="grid-column:1/-1"><button class="btn btn-primary btn-block" id="sSave">Save settings</button><p class="msg" id="sMsg"></p></div>`;
+  const set=(id,v)=>{const e=$("#"+id); if(e)e.value=v||"";};
+  set("sIg",s.ig);set("sFb",s.fb);set("sYelp",s.yelp);set("sNd",s.nextdoor);$("#sIgFeed").checked=!!s.igFeedOn;
+  set("sHours",content.hours);set("sNotify",b.notifyEmail);$("#sAccent").value=(content.brand&&content.brand.accent)||"#E5362E";
+  set("ejService",(b.emailjs||{}).serviceId);set("ejTemplate",(b.emailjs||{}).templateId);set("ejKey",(b.emailjs||{}).publicKey);
+  document.querySelectorAll("[data-sec]").forEach(cb=>cb.checked=!!sec[cb.dataset.sec]);
+  $("#sPw").onclick=()=>sendPasswordResetEmail(auth,user.email).then(()=>alert("Reset link sent to "+user.email)).catch(e=>alert("Failed: "+e.code));
+  $("#sSave").onclick=async()=>{
+    s.ig=$("#sIg").value.trim();s.fb=$("#sFb").value.trim();s.yelp=$("#sYelp").value.trim();s.nextdoor=$("#sNd").value.trim();s.igFeedOn=$("#sIgFeed").checked;
+    content.hours=$("#sHours").value.trim(); b.notifyEmail=$("#sNotify").value.trim(); (content.brand=content.brand||{}).accent=$("#sAccent").value;
+    b.emailjs={serviceId:$("#ejService").value.trim(),templateId:$("#ejTemplate").value.trim(),publicKey:$("#ejKey").value.trim()};
+    document.querySelectorAll("[data-sec]").forEach(cb=>sec[cb.dataset.sec]=cb.checked);
+    $("#sMsg").textContent="Saving…";
+    try{ await setDoc(siteRef,content,{merge:true}); $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved ✓"; renderPromoMeta(); }
+    catch(e){ $("#sMsg").style.color="var(--accent)";$("#sMsg").textContent="Save failed: "+(e.code||e.message); }
+  };
+}
+</script>
+</body>
+</html>

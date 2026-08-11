@@ -220,3 +220,18 @@ h1,h2{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:
 .reviews-alt .rev-card footer{color:var(--muted,#9aa);font-size:.85rem}
 .igfeed{padding:70px 0;border-top:1px solid rgba(255,255,255,.06)}
 #igFeedMount{margin-top:20px;min-height:120px}
+
+/* ---- address autocomplete dropdown ---- */
+.bk-addr{position:relative}
+.addr-sug{position:absolute;left:0;right:0;top:100%;z-index:30;background:#14161a;border:1px solid #2b323b;border-top:none;border-radius:0 0 8px 8px;max-height:210px;overflow:auto;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.addr-opt{padding:10px 12px;font-size:.88rem;cursor:pointer;color:#dbe3ec;border-bottom:1px solid #232830;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.addr-opt:hover{background:#1c2027}
+
+/* ---- mobile: prevent brand/name overflow in nav + footer ---- */
+@media(max-width:640px){
+  .nav-in{height:58px;gap:10px}
+  .logo{font-size:1rem;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:66vw}
+  .nav .logo span{display:none}          /* hide "Mobile Detail" subtext to stop overflow next to CTA */
+  .foot .logo span{display:block;margin-left:0;margin-top:4px}
+  .cta-text{font-size:.72rem;white-space:nowrap}
+}

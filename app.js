@@ -46,11 +46,11 @@ const DEFAULT_CONTENT = {
     headline: "Showroom finish.",
     em: "Your driveway.",
     sub: "Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office across Denver's north metro.",
-    mark: "Mobile detailing  ·  20+ years  ·  We come to you across the north metro",
+    mark: "Mobile detailing  ·  20+ years  ·  Thornton · Northglenn · Westminster · Broomfield · Arvada & north Denver",
     photo: "./images/hero.jpg"
   },
   brand: { accent: "#E5362E" },
-  pricingLead: "Pick a package, add your vehicle and any extras, and your price updates as you go — no waiting on a callback. James confirms the final number after a couple of quick photos.",
+  pricingLead: "Pick a package, add your vehicle and any extras, and your price updates as you go — no waiting on a callback. We confirm the final number after a couple of quick photos.",
   packages: [
     { id: "basic", name: "Basic Interior", price: 60, desc: "", list: ["Full interior vacuum & wipe-down", "Windows, dash & console cleaned", "Door jambs & trash-out", "Light deodorize"] },
     { id: "gold", name: "Full Detail", price: 160, featured: true, tag: "Most chosen", list: ["Full interior clean & shampoo", "Exterior hand wash", "Clay bar & leather care", "Hand wax & wheels dressed"] },
@@ -65,7 +65,7 @@ const DEFAULT_CONTENT = {
   addons: [
     { id: "pethair", label: "Pet hair removal", add: 40 },
     { id: "stains", label: "Shampoo & stain extraction", add: 50 },
-    { id: "bugsap", label: "Bug & sap removal", add: 35 },
+    { id: "protect", label: "Fabric & leather protection", add: 45 },
     { id: "engine", label: "Engine bay cleaning", add: 50 }
   ],
   included: { basic: [], gold: [], platinum: ["engine"] },
@@ -87,13 +87,13 @@ const DEFAULT_CONTENT = {
     { name: "A Lakewood neighbor", text: "James @ Colorado Reflections — highly recommend.", source: "Nextdoor recommendation" }
   ],
   area: {
-    lead: "Fully mobile across Denver's north metro — your driveway, your office lot, wherever the vehicle sits. Cars, boats, RVs and motorcycles, seven days a week. Just outside the ring? Call us, we often still make it work.",
-    cities: ["Thornton", "Northglenn", "Westminster", "Broomfield", "Arvada", "Denver"]
+    lead: "Fully mobile across the north Denver metro — Thornton, Northglenn, Westminster, Broomfield, Arvada, Federal Heights and the nearby suburbs. Your driveway, your office lot, wherever the vehicle sits. Cars, boats, RVs and motorcycles, seven days a week. Just outside the ring? Call us — we often still make it work.",
+    cities: ["Thornton", "Northglenn", "Westminster", "Broomfield", "Arvada", "Federal Heights"]
   },
   hours: "Mon–Fri 9:00a–7:30p · Sat 10:00a–7:30p · Sun 11:00a–7:30p · By appointment.",
   social: { ig: "Colorado_reflections_detail", fb: "", yelp: "https://www.yelp.com/biz/colorado-reflections-mobile-detail-denver", nextdoor: "", igFeedOn: false },
   booking: { notifyEmail: "corefmobiledetail@gmail.com", photoUploadOn: true, emailjs: { serviceId: "", templateId: "", publicKey: "" } },
-  sections: { pricing: true, work: true, story: true, reviews: true, area: true, igfeed: false },
+  sections: { pricing: true, work: true, story: true, reviews: false, area: true, igfeed: false },
   seo: {
     title: "Colorado Reflections Mobile Detail — Detailing Brought to Your Driveway in Denver's North Metro",
     desc: "Colorado Reflections brings interior and exterior detailing to your home or office across Denver's north metro. Cars, boats, RVs & motorcycles. 20+ years, owner-operated."
@@ -331,40 +331,29 @@ function mountOwnerBar() {
   const bar = document.createElement("div");
   bar.id = "crOwnerBar";
   bar.innerHTML = `
-    <button id="crLoginBtn" title="Owner sign in">Owner</button>
-    <div id="crOwnerTools" hidden>
-      <span id="crWho"></span>
-      <button id="crEditToggle">Edit site</button>
-      <button id="crSettingsBtn">Settings</button>
-      <button id="crSaveBtn" hidden>Save</button>
-      <button id="crBookingsBtn">Bookings</button>
-      <button id="crCustomersBtn">Customers</button>
-      <button id="crLogout">Sign out</button>
+    <div id="crOwnerTools">
+      <span id="crWho">Editing site</span>
+      <button id="crSaveBtn">Save</button>
+      <button id="crDone">Done</button>
     </div>`;
   document.body.appendChild(bar);
   injectOwnerStyles();
-  // Owner controls are private: only appear via a ?admin URL (or when already signed in).
-  bar.style.display = /(?:[?&#])(?:admin|edit)/i.test(location.search + location.hash) ? "block" : "none";
+  bar.style.display = "none";                       // nothing floats during normal browsing
 
-  document.getElementById("crLoginBtn").onclick = openLogin;
-  document.getElementById("crEditToggle").onclick = toggleEdit;
   document.getElementById("crSaveBtn").onclick = saveContent;
-  document.getElementById("crSettingsBtn").onclick = openSettings;
-  document.getElementById("crBookingsBtn").onclick = openBookings;
-  document.getElementById("crCustomersBtn").onclick = openCustomers;
-  document.getElementById("crLogout").onclick = () => signOut(auth);
+  document.getElementById("crDone").onclick = () => { window.location.href = "./admin.html"; };
 
-  const adminMode = /(?:[?&#])(?:admin|edit)/i.test(location.search + location.hash);
+  // Edit mode is entered ONLY via the dashboard's "Edit site" (opens ?edit=1). No public sign-in button.
+  const wantEdit = /(?:[?&])edit\b/i.test(location.search);
   onAuthStateChanged(auth, (user) => {
     currentUser = user && OWNERS.includes(user.email) ? user : null;
-    const tools = document.getElementById("crOwnerTools");
-    const loginBtn = document.getElementById("crLoginBtn");
-    if (currentUser) {
-      tools.hidden = false; loginBtn.hidden = true; bar.style.display = "block";
-      document.getElementById("crWho").textContent = currentUser.email.split("@")[0];
+    if (wantEdit && currentUser) {
+      bar.style.display = "block";
+      if (!editMode) toggleEdit();
+    } else if (wantEdit && !currentUser) {
+      window.location.replace("./admin.html");        // must sign in on the dashboard
     } else {
-      tools.hidden = true; loginBtn.hidden = !adminMode;
-      bar.style.display = adminMode ? "block" : "none";   // public sees nothing
+      bar.style.display = "none";
       if (editMode) toggleEdit();
     }
   });
@@ -401,8 +390,6 @@ function openLogin() {
 function toggleEdit() {
   editMode = !editMode;
   document.body.classList.toggle("cr-editing", editMode);
-  document.getElementById("crEditToggle").textContent = editMode ? "Editing…" : "Edit site";
-  document.getElementById("crSaveBtn").hidden = !editMode;
   document.querySelectorAll("[data-edit]").forEach(el => {
     el.contentEditable = editMode ? "true" : "false";
     if (editMode) el.addEventListener("input", markDirty); else el.removeEventListener("input", markDirty);
