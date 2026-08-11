@@ -13,11 +13,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-  sendPasswordResetEmail, signOut
+  sendPasswordResetEmail, signOut, GoogleAuthProvider, signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, addDoc, getDocs,
-  query, orderBy, serverTimestamp
+  query, orderBy, where, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const SITE_ID = "colorado-reflections";
@@ -120,6 +120,8 @@ async function load() {
   hydrate();
   mountOwnerBar();
   maybeShowTrack();
+  const mb = document.getElementById("myBookingsLink");
+  if (mb) mb.onclick = (e) => { e.preventDefault(); openMyBookings(); };
 }
 
 function deepMerge(base, over) {
@@ -332,6 +334,39 @@ async function maybeShowTrack() {
     const call = document.createElement("a"); call.className = "crbtn crbtn-primary"; call.href = "tel:+1" + (content?.business?.phone || "").replace(/\D/g, ""); call.textContent = "Call James"; body.appendChild(call);
   } catch (e) { console.warn("track failed", e); }
 }
+
+/* ---- customer accounts: "My bookings" via Google sign-in (sees only their own) ---- */
+async function openMyBookings() {
+  let user = auth.currentUser;
+  if (!user) {
+    try { const res = await signInWithPopup(auth, new GoogleAuthProvider()); user = res.user; }
+    catch (e) { return; }  // cancelled / popup blocked
+  }
+  const d = drawer("My bookings", `<div id="myBk">Loading…</div>`);
+  const list = d.querySelector("#myBk");
+  try {
+    const snap = await getDocs(query(collection(db, "sites", SITE_ID, "bookings"), where("email", "==", user.email)));
+    list.textContent = "";
+    const who = document.createElement("p"); who.className = "hint"; who.style.cssText = "color:#9aa;font-size:.8rem;margin:0 0 12px"; who.textContent = "Signed in as " + user.email; list.appendChild(who);
+    if (snap.empty) { const e = document.createElement("div"); e.textContent = "No bookings yet under this email. Book a detail and it'll show up here."; list.appendChild(e); }
+    else {
+      const rows = []; snap.forEach(s => rows.push(s.data()));
+      rows.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      rows.forEach(b => {
+        const card = document.createElement("div"); card.className = "bk-card";
+        const st = document.createElement("span"); st.className = "bk-badge bk-" + (b.status || "new");
+        st.textContent = ({ new: "Requested", confirmed: "Confirmed", done: "Done" })[b.status || "new"]; card.appendChild(st);
+        const line = (k, v) => { if (!v) return; const p = document.createElement("div"); const a = document.createElement("b"); a.textContent = k + ": "; const s = document.createElement("span"); s.textContent = v; p.append(a, s); card.appendChild(p); };
+        line("Package", b.package); line("Vehicle", b.vehicle); line("Estimate", b.estimate);
+        line("Date", b.date); line("Time", b.time); line("Where", b.address);
+        list.appendChild(card);
+      });
+    }
+    const out = document.createElement("button"); out.className = "crbtn"; out.style.marginTop = "12px"; out.textContent = "Sign out";
+    out.onclick = () => { signOut(auth).then(() => d.remove()); }; list.appendChild(out);
+  } catch (e) { list.textContent = "Couldn't load your bookings: " + (e.code || e.message); }
+}
+window.__CR_myBookings = openMyBookings;
 
 /* ============================================================
    OWNER BAR + AUTH
