@@ -705,6 +705,8 @@ function openPromo(custs) {
 
 async function saveMeta() { await setDoc(siteRef, content, { merge: false }); }
 window.__CR_content = () => content;
+// one-time reseed helper (owner-only via rules): overwrites content doc with fresh defaults, keeps bookings subcollection
+window.__CR_seed = async () => { if (!currentUser) return "sign in first"; content = structuredClone(DEFAULT_CONTENT); await setDoc(siteRef, content, { merge: false }); hydrate(); return "seeded"; };
 
 /* ---- owner bar styles ---- */
 function injectOwnerStyles() {
