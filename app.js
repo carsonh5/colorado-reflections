@@ -45,7 +45,7 @@ const DEFAULT_CONTENT = {
   hero: {
     headline: "Showroom finish.",
     em: "Your driveway.",
-    sub: "Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office across Denver's north metro.",
+    sub: "Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office across Thornton, Westminster, Arvada and the north Denver metro.",
     mark: "Mobile detailing  ·  20+ years  ·  Thornton · Northglenn · Westminster · Broomfield · Arvada & north Denver",
     photo: "./images/hero.jpg"
   },
@@ -54,7 +54,7 @@ const DEFAULT_CONTENT = {
   packages: [
     { id: "basic", name: "Basic Interior", price: 60, desc: "", list: ["Full interior vacuum & wipe-down", "Windows, dash & console cleaned", "Door jambs & trash-out", "Light deodorize"] },
     { id: "gold", name: "Full Detail", price: 160, featured: true, tag: "Most chosen", list: ["Full interior clean & shampoo", "Exterior hand wash", "Clay bar & leather care", "Hand wax & wheels dressed"] },
-    { id: "platinum", name: "Buff & Ceramic", price: 290, desc: "", list: ["Everything in Full Detail", "Paint correction buff", "Engine bay cleaning", "Ceramic coating & showroom finish"] }
+    { id: "platinum", name: "Buff & Ceramic", price: 290, desc: "", list: ["Everything in Full Detail", "Paint correction buff", "Engine bay cleaning", "Ceramic sealant & showroom finish"] }
   ],
   vehicles: [
     { id: "sedan", label: "Sedan", add: 0 },
@@ -92,7 +92,7 @@ const DEFAULT_CONTENT = {
   },
   hours: "Mon–Fri 9:00a–7:30p · Sat 10:00a–7:30p · Sun 11:00a–7:30p · By appointment.",
   social: { ig: "Colorado_reflections_detail", fb: "", yelp: "https://www.yelp.com/biz/colorado-reflections-mobile-detail-denver", nextdoor: "", igFeedOn: false },
-  booking: { notifyEmail: "corefmobiledetail@gmail.com", photoUploadOn: true, emailjs: { serviceId: "", templateId: "", publicKey: "" } },
+  booking: { notifyEmail: "carsonhanna5@gmail.com", photoUploadOn: true, emailjs: { serviceId: "service_qj7j8hm", templateId: "template_e0co2tf", publicKey: "uTfhhwQkCNGvQdNli" } },
   sections: { pricing: true, work: true, story: true, reviews: false, area: true, igfeed: false },
   seo: {
     title: "Colorado Reflections Mobile Detail — Detailing Brought to Your Driveway in Denver's North Metro",
@@ -715,6 +715,7 @@ function openPromo(custs) {
 
 async function saveMeta() { await setDoc(siteRef, content, { merge: false }); }
 window.__CR_content = () => content;
+window.__CR_seed = async () => { if (!currentUser) return "sign in first"; content = structuredClone(DEFAULT_CONTENT); await setDoc(siteRef, content, { merge: false }); hydrate(); return "seeded"; };
 
 /* ---- owner bar styles ---- */
 function injectOwnerStyles() {

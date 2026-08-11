@@ -108,6 +108,9 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
     </div>
 
     <section class="view on" id="v-overview">
+      <div class="card" style="margin-bottom:16px;border-left:3px solid var(--accent)">
+        <b>Welcome, James.</b> <span class="hint">Tap <b>Edit site</b> (bottom-left) to change your text, prices &amp; photos right on your live site. New requests show under <b>Bookings</b> — you get an email too. Your prices are placeholders for now; set your real ones via Edit site.</span>
+      </div>
       <div class="cards" id="statCards"></div>
       <div class="panel" id="recentBookings"></div>
     </section>
@@ -280,7 +283,7 @@ function renderSettings(){
     <div class="card"><h3>Sections shown</h3>
       ${["pricing","work","story","reviews","area","igfeed"].map(k=>`<div class="togg"><span>${k}</span><input data-sec="${k}" type="checkbox"></div>`).join("")}
     </div>
-    <div class="card"><h3>Email sending (EmailJS)</h3><p class="hint">Free — powers booking emails & promos. Paste keys from emailjs.com.</p>
+    <div class="card"><h3>Email sending (EmailJS)</h3><p class="hint">Configured ✓ — booking emails &amp; promos are on. (Advanced — leave as-is unless changing providers.)</p>
       <label class="fld">Service ID <input id="ejService"></label>
       <label class="fld">Template ID <input id="ejTemplate"></label>
       <label class="fld">Public key <input id="ejKey"></label>
