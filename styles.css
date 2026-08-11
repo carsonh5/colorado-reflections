@@ -209,3 +209,14 @@ h1,h2{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:
   .bk-grid{grid-template-columns:1fr}
   .lb-nav{font-size:2.6rem;padding:0 8px}
 }
+
+/* ---- self-serve additions ---- */
+.social-links{margin-top:14px;display:flex;gap:18px;flex-wrap:wrap}
+.social-links a{color:var(--accent);font:600 .8rem/1 var(--mono,monospace);letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid transparent}
+.social-links a:hover{border-color:var(--accent)}
+.reviews-alt .rev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:26px}
+.reviews-alt .rev-card{background:var(--surface,#141416);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:24px}
+.reviews-alt .rev-card p{margin:0 0 14px;font-size:1.02rem;line-height:1.55}
+.reviews-alt .rev-card footer{color:var(--muted,#9aa);font-size:.85rem}
+.igfeed{padding:70px 0;border-top:1px solid rgba(255,255,255,.06)}
+#igFeedMount{margin-top:20px;min-height:120px}

@@ -4,26 +4,22 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Colorado Reflections Mobile Detail — Detailing Brought to Your Driveway in Denver's North Metro</title>
-<meta name="description" content="Colorado Reflections brings interior and exterior detailing to your home or office across Denver's north metro. Cars, boats, RVs & motorcycles. 20+ years, owner-operated. See your price and book in minutes." />
+<meta name="description" content="Colorado Reflections brings interior and exterior detailing to your home or office across Denver's north metro. Cars, boats, RVs & motorcycles. 20+ years, owner-operated." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230C0C0D'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='28' font-weight='800' fill='%23E5362E' text-anchor='middle'%3ECR%3C/text%3E%3C/svg%3E" />
-<meta property="og:title" content="Colorado Reflections Mobile Detail — Showroom finish, your driveway" />
-<meta property="og:description" content="Mobile auto, boat, RV & motorcycle detailing across Denver's north metro. 20+ years, owner-operated. Build your quote and book in minutes." />
-<meta property="og:type" content="website" />
-<meta property="og:image" content="./images/hero.jpg" />
 <meta name="theme-color" content="#0C0C0D" />
-<!-- EDIT GUIDE: phone = search "3035898214"; prices = the data-base values in the pricing tiers below; photos = /images (hero.jpg, gal-1..6.jpg). -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-<link rel="stylesheet" href="./styles.css?v=2" />
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link rel="stylesheet" href="./styles.css?v=3" />
 </head>
 <body>
 
 <header class="nav">
   <div class="shell nav-in">
-    <a class="logo" href="#top">Colorado&nbsp;<span>Reflections</span></a>
+    <a class="logo" href="#top" data-field="business.name">Colorado&nbsp;<span data-field="business.nameSub">Reflections</span></a>
     <nav class="nav-links">
       <a href="#pricing">Pricing</a>
       <a href="#work">Work</a>
@@ -35,16 +31,17 @@
 
 <!-- HERO -->
 <section class="hero" id="top">
-  <img class="hero-img" src="./images/hero.jpg" alt="A glossy dark sedan detailed by Colorado Reflections on a Colorado driveway" />
+  <img class="hero-img" data-field="hero.photo" src="./images/hero.jpg" alt="A glossy dark sedan detailed by Colorado Reflections on a Colorado driveway" />
   <div class="hero-veil"></div>
   <div class="shell hero-in">
-    <h1>Showroom finish.<br><em>Your driveway.</em></h1>
-    <p class="hero-sub">Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office across Denver's north metro.</p>
+    <h1><span data-field="hero.headline">Showroom finish.</span><br><em data-field="hero.em">Your driveway.</em></h1>
+    <p class="hero-sub" data-field="hero.sub">Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office across Denver's north metro.</p>
     <div class="hero-act">
       <a class="btn" href="#pricing">Build your quote</a>
-      <a class="btn-quiet" href="tel:+13035898214">Call or text (303)&nbsp;589-8214</a>
+      <a class="btn-quiet" data-phone data-phone-text href="tel:+13035898214">Call or Text (303) 589-8214</a>
     </div>
-    <p class="hero-mark">Mobile detailing &nbsp;·&nbsp; 20+ years &nbsp;·&nbsp; We come to you across the north metro</p>
+    <p class="hero-mark" data-field="hero.mark">Mobile detailing  ·  20+ years  ·  We come to you across the north metro</p>
+    <p id="socialLinks" class="social-links"></p>
   </div>
 </section>
 
@@ -54,76 +51,21 @@
     <div class="sec-head">
       <p class="over">Pricing</p>
       <h2>Pick a package. See your price as you go.</h2>
-      <p class="sec-lead">Pick a package, add your vehicle and any extras, and your price updates as you go — no waiting on a callback. James confirms the final number after a couple of quick photos.</p>
+      <p class="sec-lead" data-field="pricingLead">Pick a package, add your vehicle and any extras, and your price updates as you go — no waiting on a callback. James confirms the final number after a couple of quick photos.</p>
     </div>
 
     <form id="quote">
-      <div class="tiers" role="radiogroup" aria-label="Detailing package">
-
-        <label class="tier">
-          <input type="radio" name="pkg" value="basic" data-base="60" />
-          <span class="tier-head">
-            <span class="tier-name">Basic Interior</span>
-            <span class="tier-price">from <b>$60</b></span>
-          </span>
-          <span class="tier-list">
-            <span>Full interior vacuum &amp; wipe-down</span>
-            <span>Windows, dash &amp; console cleaned</span>
-            <span>Door jambs &amp; trash-out</span>
-            <span>Light deodorize</span>
-          </span>
-        </label>
-
-        <label class="tier tier-feature">
-          <input type="radio" name="pkg" value="gold" data-base="160" />
-          <span class="tier-tag">Most chosen</span>
-          <span class="tier-head">
-            <span class="tier-name">Full Detail</span>
-            <span class="tier-price">from <b>$160</b></span>
-          </span>
-          <span class="tier-list">
-            <span>Full interior clean &amp; shampoo</span>
-            <span>Exterior hand wash</span>
-            <span>Clay bar &amp; leather care</span>
-            <span>Hand wax &amp; wheels dressed</span>
-          </span>
-        </label>
-
-        <label class="tier">
-          <input type="radio" name="pkg" value="platinum" data-base="290" />
-          <span class="tier-head">
-            <span class="tier-name">Buff &amp; Ceramic</span>
-            <span class="tier-price">from <b>$290</b></span>
-          </span>
-          <span class="tier-list">
-            <span>Everything in Full Detail</span>
-            <span>Paint correction buff</span>
-            <span>Engine bay cleaning</span>
-            <span>Ceramic coating &amp; showroom finish</span>
-          </span>
-        </label>
-
-      </div>
+      <div class="tiers" id="pkgTiers" role="radiogroup" aria-label="Detailing package"></div>
 
       <div class="builder">
         <div class="build-rows">
           <div class="build-row">
             <span class="build-label">Your vehicle</span>
-            <div class="seg" role="radiogroup" aria-label="Vehicle size">
-              <label><input type="radio" name="veh" value="sedan" data-add="0" /><span>Sedan</span></label>
-              <label><input type="radio" name="veh" value="suv" data-add="30" /><span>SUV</span></label>
-              <label><input type="radio" name="veh" value="truck" data-add="50" /><span>Truck</span></label>
-              <label><input type="radio" name="veh" value="xl" data-add="70" /><span>Oversized</span></label>
-            </div>
+            <div class="seg" id="vehSeg" role="radiogroup" aria-label="Vehicle size"></div>
           </div>
           <div class="build-row">
             <span class="build-label">Add-ons</span>
-            <div class="extras">
-              <label class="ex"><input type="checkbox" name="ex" data-key="pethair" data-add="40" /><span>Pet hair removal <b data-price="+$40">+$40</b></span></label>
-              <label class="ex"><input type="checkbox" name="ex" data-key="stains" data-add="50" /><span>Shampoo &amp; stain extraction <b data-price="+$50">+$50</b></span></label>
-              <label class="ex"><input type="checkbox" name="ex" data-key="bugsap" data-add="35" /><span>Bug &amp; sap removal <b data-price="+$35">+$35</b></span></label>
-              <label class="ex"><input type="checkbox" name="ex" data-key="engine" data-add="50" /><span>Engine bay cleaning <b data-price="+$50">+$50</b></span></label>
-            </div>
+            <div class="extras" id="addonList"></div>
           </div>
         </div>
 
@@ -144,27 +86,26 @@
   <div class="shell">
     <div class="sec-head">
       <p class="over">The work, up close</p>
-      <h2>Real vehicles, real driveways.</h2>
+      <h2 data-field="workHeading">Real vehicles, real driveways.</h2>
     </div>
-    <div class="grid">
-      <figure><img src="./images/gal-1.jpg" alt="Glossy black sedan after a wash, full buff and ceramic wax" /></figure>
-      <figure><img src="./images/gal-2.jpg" alt="Clean interior dashboard and steering wheel after a full interior detail" /></figure>
-      <figure><img src="./images/gal-3.jpg" alt="Black car with a cleaned engine bay and glossy paint" /></figure>
-      <figure><img src="./images/gal-4.jpg" alt="Deep-cleaned seat and floor of a van interior" /></figure>
-      <figure><img src="./images/gal-5.jpg" alt="A white motorhome after decal removal and a full buff" /></figure>
-      <figure><img src="./images/gal-6.jpg" alt="A blue Malibu wake boat after a full buff" /></figure>
-    </div>
+    <div class="grid" id="workGrid"></div>
   </div>
 </section>
 
-<!-- STORY (from the owner) -->
+<!-- STORY -->
 <section class="reviews" id="story">
   <div class="shell reviews-in">
-    <p class="over">From the owner</p>
-    <blockquote>
-      It started back in 1998 — I was a kid at my grandfather's mechanic shop, cleaning out the vehicles. For the next seven years that's what I did, detailing interiors. In 2004 I picked up a buffer, polishing for custom painters, and little by little I've mastered nearly every technique. <b>Now I bring all of it to your driveway.</b>
-    </blockquote>
-    <cite>James · Owner, Colorado Reflections · detailing since 1998</cite>
+    <p class="over" data-field="story.over">From the owner</p>
+    <blockquote data-field="story.quote">…</blockquote>
+    <cite data-field="story.cite">James · Owner, Colorado Reflections</cite>
+  </div>
+</section>
+
+<!-- CUSTOMER REVIEWS -->
+<section class="reviews reviews-alt" id="reviewsSection">
+  <div class="shell">
+    <div class="sec-head"><p class="over">What customers say</p><h2>Word of mouth.</h2></div>
+    <div id="reviewList" class="rev-grid"></div>
   </div>
 </section>
 
@@ -174,14 +115,18 @@
     <div class="area-copy">
       <p class="over">Service area</p>
       <h2>We come to you.</h2>
-      <p class="sec-lead">Fully mobile across Denver's north metro — your driveway, your office lot, wherever the vehicle sits. Cars, boats, RVs and motorcycles, seven days a week. Just outside the ring? Call us, we often still make it work.</p>
-      <ul class="area-cities">
-        <li>Thornton</li><li>Northglenn</li><li>Westminster</li><li>Broomfield</li><li>Arvada</li><li>Denver</li>
-      </ul>
+      <p class="sec-lead" data-field="area.lead">Fully mobile across Denver's north metro.</p>
+      <ul class="area-cities" id="areaCities"></ul>
     </div>
-    <div class="area-map">
-      <div id="map" aria-label="Map of the Denver north-metro service area"></div>
-    </div>
+    <div class="area-map"><div id="map" aria-label="Map of the Denver north-metro service area"></div></div>
+  </div>
+</section>
+
+<!-- IG FEED (optional, hidden until enabled) -->
+<section class="igfeed" id="igFeed" hidden>
+  <div class="shell">
+    <div class="sec-head"><p class="over">Latest on Instagram</p><h2>Fresh from the driveway.</h2></div>
+    <div id="igFeedMount"></div>
   </div>
 </section>
 
@@ -189,10 +134,10 @@
 <section class="end">
   <div class="shell end-in">
     <h2>Ready when you are.</h2>
-    <p>Build your quote in a minute, or just call James. We come to you across Denver's north metro.</p>
+    <p>Build your quote in a minute, or just call <span data-field="business.owner">James</span>. We come to you across Denver's north metro.</p>
     <div class="hero-act">
       <a class="btn" href="#pricing">Build your quote</a>
-      <a class="btn-quiet" href="tel:+13035898214">Call or text (303)&nbsp;589-8214</a>
+      <a class="btn-quiet" data-phone data-phone-text href="tel:+13035898214">Call or Text (303) 589-8214</a>
     </div>
   </div>
 </section>
@@ -200,16 +145,16 @@
 <footer class="foot">
   <div class="shell foot-in">
     <div>
-      <a class="logo" href="#top">Colorado&nbsp;<span>Reflections</span></a>
-      <p class="foot-note">Mobile auto, boat, RV &amp; motorcycle detailing by James. We come to you.</p>
+      <a class="logo" href="#top" data-field="business.name">Colorado&nbsp;<span data-field="business.nameSub">Reflections</span></a>
+      <p class="foot-note">Mobile auto, boat, RV &amp; motorcycle detailing by <span data-field="business.owner">James</span>. We come to you.</p>
     </div>
     <div class="foot-col">
-      <span class="foot-h">Service area</span>
-      <p>Thornton · Northglenn · Westminster · Broomfield · Arvada · Denver</p>
+      <span class="foot-h">Hours</span>
+      <p data-field="hours">By appointment — call or text to book.</p>
     </div>
     <div class="foot-col">
       <span class="foot-h">Contact</span>
-      <p><a href="tel:+13035898214">(303) 589-8214</a><br><a href="mailto:corefmobiledetail@gmail.com">corefmobiledetail@gmail.com</a><br>By appointment — call or text to book.<br>Lic. 86-1229005</p>
+      <p><a data-phone href="tel:+13035898214">(303) 589-8214</a><br><a data-email href="mailto:corefmobiledetail@gmail.com">corefmobiledetail@gmail.com</a><br><span data-field="business.license">Lic. 86-1229005</span></p>
     </div>
   </div>
 </footer>
@@ -226,48 +171,28 @@
 <div class="modal" id="bk" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bkTitle">
   <div class="modal-card">
     <button type="button" class="modal-x" id="bkClose" aria-label="Close">&times;</button>
-
     <div class="bk-step" id="bkForm">
       <p class="over">Book your detail</p>
       <h3 id="bkTitle">A couple details and we'll lock it in.</h3>
-
       <div class="bk-summary" id="bkSummary"></div>
-
-      <div class="bk-field">
-        <label class="build-label" for="bkDate">Preferred date</label>
-        <input type="date" id="bkDate" class="bk-input" />
-      </div>
-
-      <div class="bk-field">
-        <span class="build-label">Time window</span>
+      <div class="bk-field"><label class="build-label" for="bkDate">Preferred date</label><input type="date" id="bkDate" class="bk-input" /></div>
+      <div class="bk-field"><span class="build-label">Time window</span>
         <div class="seg seg-3" id="bkTime" role="radiogroup" aria-label="Time window">
           <label><input type="radio" name="bktime" value="Morning (9–12)" /><span>Morning</span></label>
           <label><input type="radio" name="bktime" value="Midday (12–3)" /><span>Midday</span></label>
           <label><input type="radio" name="bktime" value="Afternoon (3–7)" /><span>Afternoon</span></label>
         </div>
       </div>
-
       <div class="bk-grid">
-        <div class="bk-field">
-          <label class="build-label" for="bkName">Name</label>
-          <input type="text" id="bkName" class="bk-input" autocomplete="name" />
-        </div>
-        <div class="bk-field">
-          <label class="build-label" for="bkPhone">Mobile</label>
-          <input type="tel" id="bkPhone" class="bk-input" autocomplete="tel" placeholder="(720) 555-0199" />
-        </div>
+        <div class="bk-field"><label class="build-label" for="bkName">Name</label><input type="text" id="bkName" class="bk-input" autocomplete="name" /></div>
+        <div class="bk-field"><label class="build-label" for="bkPhone">Mobile</label><input type="tel" id="bkPhone" class="bk-input" autocomplete="tel" placeholder="(720) 555-0199" /></div>
       </div>
-
-      <div class="bk-field">
-        <label class="build-label" for="bkAddr">Where we're coming (address or area)</label>
-        <input type="text" id="bkAddr" class="bk-input" autocomplete="street-address" placeholder="Street, city" />
-      </div>
-
+      <div class="bk-field"><label class="build-label" for="bkAddr">Where we're coming (address or area)</label><input type="text" id="bkAddr" class="bk-input" autocomplete="street-address" placeholder="Street, city" /></div>
+      <div class="bk-field" id="bkPhotoField"><label class="build-label">Add photos of your vehicle (optional)</label><input type="file" id="bkPhotos" accept="image/*" multiple /></div>
       <p class="bk-err" id="bkErr" hidden>Add your name and a mobile number so we can confirm.</p>
       <button type="button" class="btn btn-block" id="bkSubmit">Request this time</button>
       <p class="est-fine">No charge yet. James texts you to confirm the time and final price, then you're booked.</p>
     </div>
-
     <div class="bk-step" id="bkDone" hidden>
       <div class="bk-check" aria-hidden="true">✓</div>
       <h3>You're on the list.</h3>
@@ -278,178 +203,117 @@
   </div>
 </div>
 
+<script src="./firebase-config.js"></script>
+<script type="module" src="./app.js"></script>
+
+<!-- Quote engine + booking + lightbox + map (coordinates with app.js via window.__CR_*) -->
 <script>
-var CR = (function(){
-  var PHONE = '+13035898214';
+(function(){
+  var PHONERAW = '+13035898214';
   var form = document.getElementById('quote');
-  var est = document.getElementById('est');
-  var note = document.getElementById('estNote');
-  var PKG = { basic:'Basic Interior', gold:'Full Detail', platinum:'Buff & Ceramic' };
-  var VEH = { sedan:'Sedan', suv:'SUV', truck:'Truck', xl:'Oversized' };
-  var EXN = { pethair:'Pet hair removal', stains:'Shampoo & stain extraction', bugsap:'Bug & sap removal', engine:'Engine bay cleaning' };
-  // Add-ons each package already covers (editable): Buff & Ceramic includes the engine bay.
-  var INCLUDED = { basic:[], gold:[], platinum:['engine'] };
+  var est = document.getElementById('est'), note = document.getElementById('estNote');
+
+  function C(){ return (window.__CR_content && window.__CR_content()) || {}; }
+  function labelPkg(id){ var p=(C().packages||[]).find(function(x){return x.id===id;}); return p?p.name:id; }
+  function labelVeh(id){ var v=(C().vehicles||[]).find(function(x){return x.id===id;}); return v?v.label:id; }
+  function labelEx(k){ var a=(C().addons||[]).find(function(x){return x.id===k;}); return a?a.label:k; }
+  function included(){ var c=C(); return c.included||{}; }
+  function money(n){ return '$'+Number(n).toLocaleString('en-US'); }
   function val(sel){ return form.querySelector(sel+':checked'); }
-  function money(n){ return '$' + n.toLocaleString('en-US'); }
+
   function applyIncluded(){
-    var pkg = val('input[name="pkg"]');
-    var inc = pkg ? (INCLUDED[pkg.value] || []) : [];
-    Array.prototype.forEach.call(form.querySelectorAll('input[name="ex"]'), function(e){
-      var b = e.parentNode.querySelector('b');
-      var covered = inc.indexOf(e.dataset.key) > -1;
-      if(covered){
-        e.checked = true; e.disabled = true;
-        b.textContent = 'Included';
-      } else {
-        e.disabled = false;
-        if(b.textContent === 'Included'){ e.checked = false; }
-        b.textContent = b.dataset.price;
-      }
+    var pkg = val('input[name="pkg"]'); var inc = pkg ? (included()[pkg.value]||[]) : [];
+    form.querySelectorAll('input[name="ex"]').forEach(function(e){
+      var b=e.parentNode.querySelector('b'); var covered=inc.indexOf(e.dataset.key)>-1;
+      if(covered){ e.checked=true; e.disabled=true; if(b) b.textContent='Included'; }
+      else { e.disabled=false; if(b && b.textContent==='Included'){ e.checked=false; } if(b) b.textContent=b.dataset.price; }
     });
   }
   function getQuote(){
-    var pkg = val('input[name="pkg"]');
-    var veh = val('input[name="veh"]');
-    var extras = [];
-    var base = pkg ? parseInt(pkg.dataset.base,10) : 0;
-    var add = veh ? parseInt(veh.dataset.add,10) : 0;
-    var exTotal = 0;
-    Array.prototype.forEach.call(form.querySelectorAll('input[name="ex"]:checked'), function(e){
-      var paid = !e.disabled;
-      if(paid){ exTotal += parseInt(e.dataset.add,10); }
-      extras.push({ name: EXN[e.dataset.key], included: !paid, price: paid ? parseInt(e.dataset.add,10) : 0 });
+    var pkg=val('input[name="pkg"]'), veh=val('input[name="veh"]');
+    var base=pkg?parseInt(pkg.dataset.base,10):0, add=veh?parseInt(veh.dataset.add,10):0, exTotal=0, extras=[];
+    form.querySelectorAll('input[name="ex"]:checked').forEach(function(e){
+      var paid=!e.disabled; if(paid) exTotal+=parseInt(e.dataset.add,10);
+      extras.push({name:labelEx(e.dataset.key), included:!paid, price:paid?parseInt(e.dataset.add,10):0});
     });
-    return {
-      hasPkg: !!pkg,
-      pkg: pkg ? PKG[pkg.value] : null,
-      veh: veh ? VEH[veh.value] : null,
-      extras: extras,
-      total: base + add + exTotal
-    };
+    return { hasPkg:!!pkg, pkg:pkg?labelPkg(pkg.value):null, veh:veh?labelVeh(veh.value):null, extras:extras, total:base+add+exTotal };
   }
   function render(){
-    var q = getQuote();
+    var q=getQuote();
     if(!q.hasPkg){ est.textContent='$—'; note.textContent='Pick a package to start.'; return; }
-    est.textContent = money(q.total);
-    note.textContent = q.veh ? 'Final price confirmed after photos.' : 'Add your vehicle for an exact estimate.';
+    est.textContent=money(q.total);
+    note.textContent=q.veh?'Final price confirmed after photos.':'Add your vehicle for an exact estimate.';
   }
-  form.addEventListener('change', function(e){
-    if(e.target.name === 'pkg'){ applyIncluded(); }
-    render();
-  });
-  return { getQuote:getQuote, money:money, phone:PHONE };
-})();
+  form.addEventListener('change', function(e){ if(e.target.name==='pkg'){ applyIncluded(); } render(); });
+  window.__CR_recomputeQuote = function(){ applyIncluded(); render(); };
+  window.__CR_getQuote = getQuote; window.__CR_money = money;
 
-/* ── Lightbox ─────────────────────────────────────────── */
-(function(){
-  var imgs = Array.prototype.slice.call(document.querySelectorAll('.grid figure img'));
-  var lb = document.getElementById('lb'), lbImg = document.getElementById('lbImg');
-  var i = 0;
-  function show(n){ i = (n + imgs.length) % imgs.length; lbImg.src = imgs[i].src; lbImg.alt = imgs[i].alt; }
+  /* lightbox (re-bindable after gallery re-render) */
+  var lb=document.getElementById('lb'), lbImg=document.getElementById('lbImg'), i=0, imgs=[];
+  function show(n){ i=(n+imgs.length)%imgs.length; lbImg.src=imgs[i].src; lbImg.alt=imgs[i].alt; }
   function open(n){ show(n); lb.classList.add('on'); lb.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
   function close(){ lb.classList.remove('on'); lb.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
-  imgs.forEach(function(img,n){ img.addEventListener('click', function(){ open(n); }); img.style.cursor='zoom-in'; });
+  window.__CR_bindLightbox = function(){
+    imgs = Array.prototype.slice.call(document.querySelectorAll('#workGrid figure img'));
+    imgs.forEach(function(img,n){ img.addEventListener('click', function(ev){ if(document.body.classList.contains('cr-editing')) return; open(n); }); });
+  };
   document.getElementById('lbClose').addEventListener('click', close);
   document.getElementById('lbPrev').addEventListener('click', function(){ show(i-1); });
   document.getElementById('lbNext').addEventListener('click', function(){ show(i+1); });
-  lb.addEventListener('click', function(e){ if(e.target === lb) close(); });
-  document.addEventListener('keydown', function(e){
-    if(!lb.classList.contains('on')) return;
-    if(e.key === 'Escape') close();
-    if(e.key === 'ArrowLeft') show(i-1);
-    if(e.key === 'ArrowRight') show(i+1);
-  });
-})();
+  lb.addEventListener('click', function(e){ if(e.target===lb) close(); });
+  document.addEventListener('keydown', function(e){ if(!lb.classList.contains('on'))return; if(e.key==='Escape')close(); if(e.key==='ArrowLeft')show(i-1); if(e.key==='ArrowRight')show(i+1); });
 
-/* ── Booking modal ────────────────────────────────────── */
-(function(){
-  var bk = document.getElementById('bk');
-  var summary = document.getElementById('bkSummary');
-  var stepForm = document.getElementById('bkForm'), stepDone = document.getElementById('bkDone');
-  function open(){
-    var q = CR.getQuote();
-    var html;
+  /* booking modal */
+  var bk=document.getElementById('bk'), summary=document.getElementById('bkSummary');
+  var stepForm=document.getElementById('bkForm'), stepDone=document.getElementById('bkDone');
+  function openBk(){
+    var q=getQuote(), html;
     if(q.hasPkg){
-      html = '<div class="bk-sum-row"><span>' + q.pkg + (q.veh ? ' · ' + q.veh : '') + '</span><b>' + CR.money(q.total) + '</b></div>';
-      var paid = q.extras.filter(function(x){ return !x.included; });
-      var inc = q.extras.filter(function(x){ return x.included; });
-      if(paid.length) html += '<div class="bk-sum-add">+ ' + paid.map(function(x){ return x.name; }).join(', ') + '</div>';
-      if(inc.length)  html += '<div class="bk-sum-add bk-sum-inc">Included: ' + inc.map(function(x){ return x.name; }).join(', ') + '</div>';
-      html += '<div class="bk-sum-fine">Estimate — final price confirmed after a couple of photos.</div>';
-    } else {
-      html = '<div class="bk-sum-row"><span>Custom detail</span><b>Quote by text</b></div><div class="bk-sum-fine">Tell us what you need and we\'ll price it.</div>';
-    }
-    summary.innerHTML = html;
-    stepDone.hidden = true; stepForm.hidden = false;
+      html='<div class="bk-sum-row"><span>'+q.pkg+(q.veh?' · '+q.veh:'')+'</span><b>'+money(q.total)+'</b></div>';
+      var paid=q.extras.filter(function(x){return !x.included;});
+      if(paid.length) html+='<div class="bk-sum-add">+ '+paid.map(function(x){return x.name;}).join(', ')+'</div>';
+      html+='<div class="bk-sum-fine">Estimate — final price confirmed after a couple of photos.</div>';
+    } else { html='<div class="bk-sum-row"><span>Custom detail</span><b>Quote by text</b></div>'; }
+    summary.innerHTML=html; stepDone.hidden=true; stepForm.hidden=false;
     bk.classList.add('on'); bk.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden';
-    document.getElementById('bkErr').hidden = true;
+    document.getElementById('bkErr').hidden=true;
   }
-  function close(){ bk.classList.remove('on'); bk.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
-  document.getElementById('bookBtn').addEventListener('click', open);
-  document.getElementById('bkClose').addEventListener('click', close);
-  bk.addEventListener('click', function(e){ if(e.target === bk) close(); });
-  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && bk.classList.contains('on')) close(); });
+  function closeBk(){ bk.classList.remove('on'); bk.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+  document.getElementById('bookBtn').addEventListener('click', openBk);
+  document.getElementById('bkClose').addEventListener('click', closeBk);
+  bk.addEventListener('click', function(e){ if(e.target===bk) closeBk(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape'&&bk.classList.contains('on')) closeBk(); });
 
   document.getElementById('bkSubmit').addEventListener('click', function(){
-    var name = document.getElementById('bkName').value.trim();
-    var phone = document.getElementById('bkPhone').value.trim();
-    if(!name || !phone){ document.getElementById('bkErr').hidden = false; return; }
-    var date = document.getElementById('bkDate').value;
-    var t = bk.querySelector('input[name="bktime"]:checked');
-    var addr = document.getElementById('bkAddr').value.trim();
-    var q = CR.getQuote();
-    var lines = ['Detail request — ' + name];
-    if(q.hasPkg){
-      lines.push(q.pkg + (q.veh ? ' (' + q.veh + ')' : '') + ' — ' + CR.money(q.total) + ' est.');
-      var paid = q.extras.filter(function(x){ return !x.included; }).map(function(x){ return x.name; });
-      if(paid.length) lines.push('Add-ons: ' + paid.join(', '));
-    } else { lines.push('Custom detail'); }
-    if(date) lines.push('Date: ' + date);
-    if(t) lines.push('Time: ' + t.value);
-    if(addr) lines.push('Location: ' + addr);
-    lines.push('Phone: ' + phone);
-    var body = encodeURIComponent(lines.join('\n'));
-    document.getElementById('bkText').href = 'sms:' + CR.phone + '?&body=' + body;
-    document.getElementById('bkDoneNote').textContent =
-      'James will text ' + phone + ' to confirm your time' + (date ? ' on ' + date : '') + ' and the final price. Want to reach him first? Send the request straight to his phone:';
-    stepForm.hidden = true; stepDone.hidden = false;
+    var name=document.getElementById('bkName').value.trim(), phone=document.getElementById('bkPhone').value.trim();
+    if(!name||!phone){ document.getElementById('bkErr').hidden=false; return; }
+    var date=document.getElementById('bkDate').value, t=bk.querySelector('input[name="bktime"]:checked'), addr=document.getElementById('bkAddr').value.trim();
+    var q=getQuote();
+    var payload={ name:name, phone:phone, date:date||'', time:t?t.value:'', address:addr,
+      package:q.pkg||'Custom', vehicle:q.veh||'', estimate:q.hasPkg?money(q.total):'by text',
+      addons:q.extras.filter(function(x){return !x.included;}).map(function(x){return x.name;}).join(', ') };
+    if(window.__CR_submitBooking) window.__CR_submitBooking(payload);
+    var lines=['Detail request — '+name]; if(q.hasPkg) lines.push(q.pkg+(q.veh?' ('+q.veh+')':'')+' — '+money(q.total)+' est.');
+    if(date) lines.push('Date: '+date); if(t) lines.push('Time: '+t.value); if(addr) lines.push('Location: '+addr); lines.push('Phone: '+phone);
+    document.getElementById('bkText').href='sms:'+PHONERAW+'?&body='+encodeURIComponent(lines.join('\n'));
+    document.getElementById('bkDoneNote').textContent='James will text '+phone+' to confirm your time'+(date?' on '+date:'')+' and the final price.';
+    stepForm.hidden=true; stepDone.hidden=false;
   });
-  document.getElementById('bkRestart').addEventListener('click', function(){ stepDone.hidden = true; stepForm.hidden = false; });
-})();
+  document.getElementById('bkRestart').addEventListener('click', function(){ stepDone.hidden=true; stepForm.hidden=false; });
 
-/* ── Scroll reveal ── */
-(function(){
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(reduce || !('IntersectionObserver' in window)) return;
-  var sel = ['.price .sec-head','.tiers','.builder','.work .sec-head','.grid figure','.reviews-in','.area-in','.end-in'];
-  var els = [];
-  sel.forEach(function(s){ Array.prototype.forEach.call(document.querySelectorAll(s), function(el){ els.push(el); }); });
-  els.forEach(function(el,i){ el.classList.add('reveal'); el.style.transitionDelay = ((i % 3) * 70) + 'ms'; });
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
-  els.forEach(function(el){ io.observe(el); });
-})();
-
-/* ── Service-area map (Leaflet, dark) ── */
-window.addEventListener('load', function(){
-  var el = document.getElementById('map');
-  if(!el || !window.L) return;
-  var center = [39.878, -104.985];
-  var map = L.map(el, { zoomControl:true, scrollWheelZoom:true, attributionControl:true }).setView(center, 11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 18, minZoom: 9, subdomains:'abcd',
-    attribution:'&copy; OpenStreetMap &copy; CARTO'
-  }).addTo(map);
-  var ring = L.circle(center, { radius: 17000, color:'#E5362E', weight:1.5, opacity:.9, fillColor:'#E5362E', fillOpacity:.06 }).addTo(map);
-  var cities = [['Thornton',39.8681,-104.9719],['Northglenn',39.8858,-104.9878],['Westminster',39.8367,-105.0372],['Broomfield',39.9205,-105.0867],['Arvada',39.8028,-105.0875],['Denver',39.7392,-104.9903]];
-  cities.forEach(function(c){
-    L.circleMarker([c[1],c[2]], { radius:4, color:'#fff', weight:1, fillColor:'#E5362E', fillOpacity:1 })
-      .addTo(map).bindTooltip(c[0], { direction:'top', offset:[0,-4] });
+  /* service-area map */
+  window.addEventListener('load', function(){
+    var el=document.getElementById('map'); if(!el||!window.L) return;
+    var center=[39.878,-104.985];
+    var map=L.map(el,{zoomControl:true,scrollWheelZoom:false,attributionControl:true}).setView(center,11);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18,minZoom:9,subdomains:'abcd',attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+    var ring=L.circle(center,{radius:17000,color:'#E5362E',weight:1.5,opacity:.9,fillColor:'#E5362E',fillOpacity:.06}).addTo(map);
+    [['Thornton',39.8681,-104.9719],['Northglenn',39.8858,-104.9878],['Westminster',39.8367,-105.0372],['Broomfield',39.9205,-105.0867],['Arvada',39.8028,-105.0875],['Denver',39.7392,-104.9903]].forEach(function(c){
+      L.circleMarker([c[1],c[2]],{radius:4,color:'#fff',weight:1,fillColor:'#E5362E',fillOpacity:1}).addTo(map).bindTooltip(c[0],{direction:'top',offset:[0,-4]});
+    });
+    map.fitBounds(ring.getBounds(),{padding:[34,34]}); map.setMinZoom(map.getZoom()-1);
   });
-  map.fitBounds(ring.getBounds(), { padding: [34, 34] });
-  map.setMinZoom(map.getZoom() - 1);
-});
+})();
 </script>
 </body>
 </html>
