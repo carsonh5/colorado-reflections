@@ -45,8 +45,8 @@ const DEFAULT_CONTENT = {
   hero: {
     headline: "Showroom finish.",
     em: "Your driveway.",
-    sub: "Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office across Thornton, Westminster, Arvada and the north Denver metro.",
-    mark: "Mobile detailing  ·  20+ years  ·  Thornton · Northglenn · Westminster · Broomfield · Arvada & north Denver",
+    sub: "Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office in Thornton, Northglenn, Westminster, Broomfield, Arvada and Federal Heights.",
+    mark: "Mobile detailing  ·  20+ years  ·  Thornton · Northglenn · Westminster · Broomfield · Arvada · Federal Heights",
     photo: "./images/hero.jpg"
   },
   brand: { accent: "#E5362E" },
@@ -54,7 +54,7 @@ const DEFAULT_CONTENT = {
   packages: [
     { id: "basic", name: "Basic Interior", price: 60, desc: "", list: ["Full interior vacuum & wipe-down", "Windows, dash & console cleaned", "Door jambs & trash-out", "Light deodorize"] },
     { id: "gold", name: "Full Detail", price: 160, featured: true, tag: "Most chosen", list: ["Full interior clean & shampoo", "Exterior hand wash", "Clay bar & leather care", "Hand wax & wheels dressed"] },
-    { id: "platinum", name: "Buff & Ceramic", price: 290, desc: "", list: ["Everything in Full Detail", "Paint correction buff", "Engine bay cleaning", "Ceramic sealant & showroom finish"] }
+    { id: "platinum", name: "Buff & Ceramic", price: 290, tag: "Best protection", desc: "", list: ["Everything in Full Detail", "Paint correction buff", "Engine bay cleaning", "Ceramic sealant & showroom finish"] }
   ],
   vehicles: [
     { id: "sedan", label: "Sedan", add: 0 },
@@ -69,7 +69,7 @@ const DEFAULT_CONTENT = {
     { id: "engine", label: "Engine bay cleaning", add: 50 }
   ],
   included: { basic: [], gold: [], platinum: ["engine"] },
-  workHeading: "Real vehicles, real driveways.",
+  workHeading: "Your vehicle could look like this.",
   gallery: [
     { src: "./images/gal-1.jpg", cap: "Wash, full buff & ceramic wax" },
     { src: "./images/gal-2.jpg", cap: "Complete interior, shampoo & leather care" },
@@ -81,7 +81,7 @@ const DEFAULT_CONTENT = {
   story: {
     over: "From the owner",
     quote: "It started back in 1998 — I was a kid at my grandfather's mechanic shop, cleaning out the vehicles. For the next seven years that's what I did, detailing interiors. In 2004 I picked up a buffer, polishing for custom painters, and little by little I've mastered nearly every technique. Now I bring all of it to your driveway.",
-    cite: "James · Owner, Colorado Reflections · detailing since 1998"
+    cite: "James · Owner, Colorado Reflections"
   },
   reviews: [
     { name: "A Lakewood neighbor", text: "James @ Colorado Reflections — highly recommend.", source: "Nextdoor recommendation" }
@@ -104,7 +104,7 @@ const DEFAULT_CONTENT = {
   },
   sections: { pricing: true, work: true, story: true, reviews: false, area: true, igfeed: false },
   seo: {
-    title: "Colorado Reflections Mobile Detail — Detailing Brought to Your Driveway in Denver's North Metro",
+    title: "Mobile Car Detailing in Thornton, Northglenn & Westminster — Colorado Reflections",
     desc: "Colorado Reflections brings interior and exterior detailing to your home or office across Denver's north metro. Cars, boats, RVs & motorcycles. 20+ years, owner-operated."
   }
 };
@@ -397,7 +397,7 @@ async function maybeShowTrack() {
     const status = document.createElement("div"); status.className = "trk-status trk-" + (b.status || "new"); status.textContent = ({ new: "Requested — we'll confirm shortly", confirmed: "Confirmed", done: "Completed" })[b.status || "new"]; body.appendChild(status);
     row("Name", b.name); row("Package", b.package); row("Vehicle", b.vehicle);
     row("Estimate", b.estimate); row("Date", b.date); row("Time", b.time); row("Where", b.address);
-    const call = document.createElement("a"); call.className = "crbtn crbtn-primary"; call.href = "tel:+1" + (content?.business?.phone || "").replace(/\D/g, ""); call.textContent = "Call James"; body.appendChild(call);
+    const call = document.createElement("a"); call.className = "crbtn crbtn-primary"; call.href = "tel:+1" + (content?.business?.phone || "").replace(/\D/g, ""); call.textContent = "Call us"; body.appendChild(call);
   } catch (e) { console.warn("track failed", e); }
 }
 
@@ -668,6 +668,16 @@ async function saveContent() {
   const btn = document.getElementById("crSaveBtn");
   btn.textContent = "Saving…"; btn.disabled = true;
   try {
+    // Preserve fields the admin dashboard owns (availability, booking settings) in case they
+    // were changed after this page loaded — the inline editor never edits them, so keep the freshest copy.
+    try {
+      const fresh = await getDoc(siteRef);
+      if (fresh.exists()) {
+        const fd = fresh.data();
+        if (fd.availability) content.availability = fd.availability;
+        if (fd.booking) content.booking = deepMerge(content.booking || {}, fd.booking);
+      }
+    } catch (e) { /* offline / read blocked — fall through and save what we have */ }
     await setDoc(siteRef, content, { merge: false });
     dirty = false;
     btn.textContent = "Saved";

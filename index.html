@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Colorado Reflections Mobile Detail — Detailing Brought to Your Driveway in Denver's North Metro</title>
+<title>Mobile Car Detailing in Thornton, Northglenn & Westminster — Colorado Reflections</title>
 <meta name="description" content="Colorado Reflections brings interior and exterior detailing to your home or office across Denver's north metro. Cars, boats, RVs & motorcycles. 20+ years, owner-operated." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230C0C0D'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='28' font-weight='800' fill='%23E5362E' text-anchor='middle'%3ECR%3C/text%3E%3C/svg%3E" />
 <meta name="theme-color" content="#0C0C0D" />
@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="./styles.css?v=6" />
+<link rel="stylesheet" href="./styles.css?v=7" />
 </head>
 <body>
 
@@ -35,12 +35,12 @@
   <div class="hero-veil"></div>
   <div class="shell hero-in">
     <h1><span data-field="hero.headline">Showroom finish.</span><br><em data-field="hero.em">Your driveway.</em></h1>
-    <p class="hero-sub" data-field="hero.sub">Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office across Thornton, Westminster, Arvada and the north Denver metro.</p>
+    <p class="hero-sub" data-field="hero.sub">Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office in Thornton, Northglenn, Westminster, Broomfield, Arvada and Federal Heights.</p>
     <div class="hero-act">
       <a class="btn" href="#pricing">Build your quote</a>
       <a class="btn-quiet" data-phone data-phone-text href="tel:+13035898214">Call or Text (303) 589-8214</a>
     </div>
-    <p class="hero-mark" data-field="hero.mark">Mobile detailing  ·  20+ years  ·  We come to you across the north metro</p>
+    <p class="hero-mark" data-field="hero.mark">Mobile detailing  ·  20+ years  ·  Thornton · Northglenn · Westminster · Broomfield · Arvada · Federal Heights</p>
     <p id="socialLinks" class="social-links"></p>
   </div>
 </section>
@@ -50,7 +50,7 @@
   <div class="shell">
     <div class="sec-head">
       <p class="over">Pricing</p>
-      <h2>Pick a package. See your price as you go.</h2>
+      <h2>Instant pricing. No callbacks, no surprises.</h2>
       <p class="sec-lead" data-field="pricingLead">Pick a package, add your vehicle and any extras, and your price updates as you go — no waiting on a callback. We confirm the final number after a couple of quick photos.</p>
     </div>
 
@@ -74,7 +74,7 @@
           <p class="est-num" id="est">$—</p>
           <p class="est-note" id="estNote">Pick a package to start.</p>
           <button type="button" class="btn btn-block" id="bookBtn">Book this detail</button>
-          <p class="est-fine">Boats, RVs &amp; motorcycles quoted by phone. Final price confirmed after a couple of photos.</p>
+          <p class="est-fine">Have a boat, RV or motorcycle? Add a photo when you book and we'll confirm your price. Final price confirmed after a couple of photos.</p>
         </aside>
       </div>
     </form>
@@ -86,7 +86,7 @@
   <div class="shell">
     <div class="sec-head">
       <p class="over">The work, up close</p>
-      <h2 data-field="workHeading">Real vehicles, real driveways.</h2>
+      <h2 data-field="workHeading">Your vehicle could look like this.</h2>
     </div>
     <div class="grid" id="workGrid"></div>
   </div>
@@ -133,8 +133,8 @@
 <!-- CTA -->
 <section class="end">
   <div class="shell end-in">
-    <h2>Ready when you are.</h2>
-    <p>Build your quote in a minute, or just call us. We come to you across the north Denver metro.</p>
+    <h2>Your driveway. Your schedule.</h2>
+    <p>Build your quote in a minute, or just call us — we come to you in Thornton, Northglenn, Westminster, Broomfield, Arvada and Federal Heights.</p>
     <div class="hero-act">
       <a class="btn" href="#pricing">Build your quote</a>
       <a class="btn-quiet" data-phone data-phone-text href="tel:+13035898214">Call or Text (303) 589-8214</a>
@@ -204,7 +204,7 @@
 </div>
 
 <script src="./firebase-config.js"></script>
-<script type="module" src="./app.js?v=14"></script>
+<script type="module" src="./app.js?v=15"></script>
 
 <!-- Quote engine + booking + lightbox + map (coordinates with app.js via window.__CR_*) -->
 <script>
@@ -239,8 +239,9 @@
     return { hasPkg:!!pkg, pkg:pkg?labelPkg(pkg.value):null, veh:veh?labelVeh(veh.value):null, extras:extras, total:base+add+exTotal };
   }
   function render(){
-    var q=getQuote();
-    if(!q.hasPkg){ est.textContent='$—'; note.textContent='Pick a package to start.'; return; }
+    var q=getQuote(); var bb=document.getElementById('bookBtn');
+    if(!q.hasPkg){ est.textContent='$—'; note.textContent='Pick a package to start.'; if(bb) bb.textContent='Get a custom quote'; return; }
+    if(bb) bb.textContent='Book this detail';
     est.textContent=money(q.total);
     note.textContent=q.veh?'Final price confirmed after photos.':'Add your vehicle for an exact estimate.';
   }
@@ -313,6 +314,7 @@
     if(date && window.__CR_bookingAvail){
       var av=window.__CR_bookingAvail(date);
       if(!av.open){ var er=document.getElementById('bkErr'); er.textContent=av.reason||"Please pick an available date."; er.hidden=false; return; }
+      if(t){ var sl=av.slots.find(function(x){return x.label===t.value;}); if(sl && !sl.available){ var er2=document.getElementById('bkErr'); er2.textContent="That time was just taken — please pick another."; er2.hidden=false; return; } }
     }
     var q=getQuote();
     var email=document.getElementById('bkEmail').value.trim();
@@ -372,7 +374,7 @@
     var map=L.map(el,{zoomControl:true,scrollWheelZoom:false,attributionControl:true}).setView(center,11);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18,minZoom:9,subdomains:'abcd',attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
     var ring=L.circle(center,{radius:17000,color:'#E5362E',weight:1.5,opacity:.9,fillColor:'#E5362E',fillOpacity:.06}).addTo(map);
-    [['Thornton',39.8681,-104.9719],['Northglenn',39.8858,-104.9878],['Westminster',39.8367,-105.0372],['Broomfield',39.9205,-105.0867],['Arvada',39.8028,-105.0875],['Denver',39.7392,-104.9903]].forEach(function(c){
+    [['Thornton',39.8681,-104.9719],['Northglenn',39.8858,-104.9878],['Westminster',39.8367,-105.0372],['Broomfield',39.9205,-105.0867],['Arvada',39.8028,-105.0875],['Federal Heights',39.8564,-105.0130]].forEach(function(c){
       L.circleMarker([c[1],c[2]],{radius:4,color:'#fff',weight:1,fillColor:'#E5362E',fillOpacity:1}).addTo(map).bindTooltip(c[0],{direction:'top',offset:[0,-4]});
     });
     map.fitBounds(ring.getBounds(),{padding:[34,34]}); map.setMinZoom(map.getZoom()-1);

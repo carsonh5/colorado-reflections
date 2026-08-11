@@ -36,8 +36,11 @@ a{color:inherit}
 .av-label .sub{color:var(--muted);font-size:.78rem;margin-top:2px}
 .btn-icon{padding:8px;line-height:0;flex:none}
 .btn-icon svg{width:14px;height:14px}
-.av-add{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.av-add{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:flex-end}
 .av-add .fld-in{flex:1;min-width:120px}
+.av-f{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;font-size:.74rem;color:var(--muted)}
+.av-f .fld-in{width:100%;min-width:0}
+.av-add .btn{white-space:nowrap}
 /* shell */
 #app{display:none;min-height:100vh;grid-template-columns:230px 1fr}
 #mEdit{display:none}
@@ -85,7 +88,7 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
   #app{grid-template-columns:1fr!important}
   #side{display:none!important}
   #menuBtn{display:none!important}
-  main{padding:16px 14px 96px!important;max-width:100%!important}
+  main{padding:16px 14px 124px!important;max-width:100%!important}
   .topbar{margin-bottom:16px}
   .topbar h2{font-size:1.2rem}
   #whoami{display:none!important}
@@ -99,6 +102,15 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
   #tabbar a .ic{line-height:1}
   #tabbar a .ic svg{width:22px;height:22px;display:block}
   #tabbar a.has::after{content:"";position:absolute;top:5px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  #tabbar a{font-size:.6rem;padding:7px 1px;letter-spacing:-.01em}
+  .acts .btn{min-height:44px;padding:10px 14px;font-size:.85rem}
+  .row{padding:14px}
+  .row>div:not(:first-child){padding-top:6px}
+  .acts{border-top:1px solid var(--line);padding-top:10px;margin-top:2px;gap:8px}
+  .av-add{flex-direction:column}
+  .av-add .fld-in{min-width:0;width:100%}
+  .av-add .btn{width:100%}
+  .msg{margin-bottom:6px}
 }
 </style>
 </head>
@@ -159,7 +171,7 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
         <label class="fld">Subject <input id="pSubj" placeholder="20% off your next detail"></label>
         <label class="fld">Message <textarea id="pMsg" rows="5"></textarea></label>
         <p class="hint" id="pMode"></p>
-        <div class="right" style="margin-top:8px"><button class="btn btn-primary" id="pSend">Send email promo</button><button class="btn" id="pCopy">Copy phone list for texting</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-primary" id="pSend">Send email promo</button><button class="btn" id="pCopy">Copy phone list for texting</button></div>
         <p class="msg" id="pOut"></p>
       </div>
     </section>
@@ -194,7 +206,8 @@ const money = n => "$"+Number(n).toLocaleString();
 const priceNum = e => { const m=/\d[\d,]*/.exec(String(e||"")); return m?+m[0].replace(/,/g,""):0; };
 const xSvg = () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
 
-let content=null, bookings=[], user=null;
+let content=null, bookings=[], user=null, dirty=false;
+const markDirty=()=>{dirty=true;};
 
 /* ---- auth ---- */
 $("#lGo").onclick = () => { $("#lMsg").textContent="Signing in…"; signInWithEmailAndPassword(auth,$("#lEmail").value.trim(),$("#lPw").value).catch(e=>$("#lMsg").textContent="Sign in failed ("+e.code+")."); };
@@ -221,6 +234,8 @@ async function loadAll(){
 /* ---- nav (sidebar + mobile bottom tab bar, kept in sync) ---- */
 const TITLES={overview:"Overview",bookings:"Bookings",availability:"Availability",customers:"Customers",promos:"Promos",settings:"Settings"};
 function showView(v){
+  if(dirty && !confirm("You have unsaved changes on this page. Leave without saving?")) return;
+  dirty=false;
   document.querySelectorAll(".navlink, #tabbar a").forEach(x=>x.classList.toggle("active", x.dataset.view===v));
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
   $("#v-"+v).classList.add("on");
@@ -313,13 +328,13 @@ function renderAvailability(){
     <div class="card"><h3>Days off &amp; vacation</h3>
       <p class="hint">Add a date or a range you're away — those days grey out for customers.</p>
       <div id="vacList">${vacRows}</div>
-      <div class="av-add"><input type="date" id="vacStart" class="fld-in"><input type="date" id="vacEnd" class="fld-in" title="End (optional)"><input id="vacLabel" class="fld-in" placeholder="Reason (optional)"><button class="btn" id="vacAdd">Add</button></div>
+      <div class="av-add"><label class="av-f">Start date<input type="date" id="vacStart" class="fld-in"></label><label class="av-f">End date (optional)<input type="date" id="vacEnd" class="fld-in"></label><label class="av-f">Reason (optional)<input id="vacLabel" class="fld-in" placeholder="e.g. Vacation"></label><button class="btn" id="vacAdd">Add day off</button></div>
     </div>
     <div class="card"><h3>Block a specific slot</h3>
       <p class="hint">Booked someone by phone? Block that date &amp; time so no one else grabs it.</p>
       <div id="blkList">${blkRows}</div>
       <datalist id="slotDL">${slotOpts}</datalist>
-      <div class="av-add"><input type="date" id="blkDate" class="fld-in"><input id="blkSlot" class="fld-in" list="slotDL" placeholder="Time (blank = whole day)"><button class="btn" id="blkAdd">Block</button></div>
+      <div class="av-add"><label class="av-f">Date<input type="date" id="blkDate" class="fld-in"></label><label class="av-f">Time<input id="blkSlot" class="fld-in" list="slotDL" placeholder="Blank = whole day"></label><button class="btn" id="blkAdd">Block it</button></div>
     </div>
     <div class="card"><h3>Booking window</h3>
       <label class="fld">Earliest a customer can book <select id="avLead"><option value="0">Same day</option><option value="1">1 day ahead</option><option value="2">2 days ahead</option><option value="3">3 days ahead</option></select></label>
@@ -328,21 +343,22 @@ function renderAvailability(){
     <div class="card" style="grid-column:1/-1"><button class="btn btn-primary btn-block" id="avSave">Save availability</button><p class="msg" id="avMsg"></p></div>`;
   $("#avLead").value=String(a.leadDays); $("#avHorizon").value=String([14,30,60,90].includes(a.horizonDays)?a.horizonDays:60);
   // wire
-  $("#slotList").querySelectorAll("[data-slot]").forEach(inp=>inp.oninput=()=>{a.slots[+inp.dataset.slot]=inp.value;});
-  $("#slotList").querySelectorAll("[data-slotdel]").forEach(b=>b.onclick=()=>{a.slots.splice(+b.dataset.slotdel,1);renderAvailability();});
-  $("#slotAdd").onclick=()=>{a.slots.push("New time");renderAvailability();};
-  $("#slotPreW").onclick=()=>{a.slots=["Morning (9–12)","Midday (12–3)","Afternoon (3–7)"];renderAvailability();};
-  $("#slotPreH").onclick=()=>{a.slots=["8:00","9:00","10:00","11:00","12:00","1:00","2:00","3:00","4:00","5:00"];renderAvailability();};
-  $("#availGrid").querySelectorAll("[data-day]").forEach(cb=>cb.onchange=()=>{a.openDays[+cb.dataset.day]=cb.checked;});
-  $("#availGrid").querySelectorAll("[data-vacdel]").forEach(b=>b.onclick=()=>{a.vacations.splice(+b.dataset.vacdel,1);renderAvailability();});
-  $("#vacAdd").onclick=()=>{const s=$("#vacStart").value;if(!s){$("#avMsg").textContent="Pick a start date.";return;}a.vacations.push({start:s,end:$("#vacEnd").value||s,label:$("#vacLabel").value.trim()});renderAvailability();};
-  $("#availGrid").querySelectorAll("[data-blkdel]").forEach(b=>b.onclick=()=>{a.blocked.splice(+b.dataset.blkdel,1);renderAvailability();});
-  $("#blkAdd").onclick=()=>{const d=$("#blkDate").value;if(!d){$("#avMsg").textContent="Pick a date to block.";return;}a.blocked.push({date:d,slot:$("#blkSlot").value.trim()});renderAvailability();};
+  $("#slotList").querySelectorAll("[data-slot]").forEach(inp=>inp.oninput=()=>{a.slots[+inp.dataset.slot]=inp.value;markDirty();});
+  $("#slotList").querySelectorAll("[data-slotdel]").forEach(b=>b.onclick=()=>{a.slots.splice(+b.dataset.slotdel,1);markDirty();renderAvailability();});
+  $("#slotAdd").onclick=()=>{a.slots.push("New time");markDirty();renderAvailability();};
+  $("#slotPreW").onclick=()=>{a.slots=["Morning (9–12)","Midday (12–3)","Afternoon (3–7)"];markDirty();renderAvailability();};
+  $("#slotPreH").onclick=()=>{a.slots=["8:00","9:00","10:00","11:00","12:00","1:00","2:00","3:00","4:00","5:00"];markDirty();renderAvailability();};
+  $("#availGrid").querySelectorAll("[data-day]").forEach(cb=>cb.onchange=()=>{a.openDays[+cb.dataset.day]=cb.checked;markDirty();});
+  $("#avLead").onchange=markDirty; $("#avHorizon").onchange=markDirty;
+  $("#availGrid").querySelectorAll("[data-vacdel]").forEach(b=>b.onclick=()=>{a.vacations.splice(+b.dataset.vacdel,1);markDirty();renderAvailability();});
+  $("#vacAdd").onclick=()=>{const s=$("#vacStart").value;if(!s){$("#avMsg").textContent="Pick a start date.";return;}a.vacations.push({start:s,end:$("#vacEnd").value||s,label:$("#vacLabel").value.trim()});markDirty();renderAvailability();};
+  $("#availGrid").querySelectorAll("[data-blkdel]").forEach(b=>b.onclick=()=>{a.blocked.splice(+b.dataset.blkdel,1);markDirty();renderAvailability();});
+  $("#blkAdd").onclick=()=>{const d=$("#blkDate").value;if(!d){$("#avMsg").textContent="Pick a date to block.";return;}a.blocked.push({date:d,slot:$("#blkSlot").value.trim()});markDirty();renderAvailability();};
   $("#avSave").onclick=async()=>{
     a.leadDays=+$("#avLead").value; a.horizonDays=+$("#avHorizon").value;
     a.slots=a.slots.map(s=>String(s).trim()).filter(Boolean);
     $("#avMsg").style.color="var(--muted)";$("#avMsg").textContent="Saving…";
-    try{ await setDoc(siteRef,{availability:a},{merge:true}); $("#avMsg").style.color="var(--ok)";$("#avMsg").textContent="Saved"; }
+    try{ await setDoc(siteRef,{availability:a},{merge:true}); dirty=false; $("#avMsg").style.color="var(--ok)";$("#avMsg").textContent="Saved"; }
     catch(e){ $("#avMsg").style.color="var(--accent)";$("#avMsg").textContent="Save failed: "+(e.code||e.message); }
   };
 }
@@ -401,11 +417,12 @@ function renderSettings(){
     </div>
     <div class="card"><h3>Operations</h3>
       <label class="fld">Hours <input id="sHours"></label>
-      <label class="fld">Booking notifications go to <input id="sNotify"></label>
+      <label class="fld">Booking notifications go to <input id="sNotify" placeholder="you@email.com"></label>
+      <p class="hint" style="margin:-6px 0 12px">We email you here every time someone requests a booking.</p>
       <label class="fld">Accent color <input id="sAccent" type="color"></label>
     </div>
-    <div class="card"><h3>Sections shown</h3>
-      ${["pricing","work","story","reviews","area","igfeed"].map(k=>`<div class="togg"><span>${k}</span><input data-sec="${k}" type="checkbox"></div>`).join("")}
+    <div class="card"><h3>Sections shown on your site</h3>
+      ${[["pricing","Pricing & quote builder"],["work","Photo gallery"],["story","About me / owner story"],["reviews","Customer reviews"],["area","Service area map"],["igfeed","Instagram feed"]].map(k=>`<div class="togg"><span>${k[1]}</span><input data-sec="${k[0]}" type="checkbox"></div>`).join("")}
     </div>
     <div class="card"><h3>Email notifications</h3>
       <p class="hint" id="ejStatus"></p>
@@ -417,8 +434,8 @@ function renderSettings(){
       <label class="fld">Stripe Payment Link URL <input id="sPayLink" placeholder="https://buy.stripe.com/..."></label>
       <label class="fld">Button label <input id="sPayLabel" placeholder="Pay a deposit to lock your spot"></label>
     </div>
-    <div class="card"><h3>Storage</h3><div class="meter"><span style="width:${pct}%"></span></div>
-      <p class="hint">${kb} KB of 1024 KB used (photos live here).</p></div>
+    <div class="card"><h3>Storage</h3><div class="meter"><span style="width:${pct}%;${pct>80?'background:var(--accent)':''}"></span></div>
+      <p class="hint">${kb} KB of 1024 KB used — this holds your site's text, settings and photos.${pct>80?" <b style='color:var(--accent)'>Getting full — remove a photo or two before adding more.</b>":""}</p></div>
     <div class="card"><h3>Account & domain</h3>
       <button class="btn btn-block" id="sPw" style="margin-bottom:10px">Send me a password reset link</button>
       <p class="hint">To connect a domain: point its DNS to GitHub Pages and add a CNAME. Ask us and we'll set it up.</p></div>
@@ -430,6 +447,7 @@ function renderSettings(){
     if(es){ es.innerHTML = ok ? "<b style='color:var(--ok)'>On</b> — booking &amp; promo emails are active." : "<b style='color:var(--accent)'>Off</b> — contact us to switch email on."; } }
   document.querySelectorAll("[data-sec]").forEach(cb=>cb.checked=!!sec[cb.dataset.sec]);
   $("#sPayOn").checked=!!b.payOn; set("sPayLink",b.payLink); set("sPayLabel",b.payLabel);
+  $("#settingsGrid").addEventListener("input",markDirty); $("#settingsGrid").addEventListener("change",markDirty);
   $("#sPw").onclick=()=>sendPasswordResetEmail(auth,user.email).then(()=>alert("Reset link sent to "+user.email)).catch(e=>alert("Failed: "+e.code));
   $("#sSave").onclick=async()=>{
     s.ig=$("#sIg").value.trim();s.fb=$("#sFb").value.trim();s.yelp=$("#sYelp").value.trim();s.nextdoor=$("#sNd").value.trim();s.igFeedOn=$("#sIgFeed").checked;
@@ -437,7 +455,7 @@ function renderSettings(){
     b.payOn=$("#sPayOn").checked; b.payLink=$("#sPayLink").value.trim(); b.payLabel=$("#sPayLabel").value.trim();
     document.querySelectorAll("[data-sec]").forEach(cb=>sec[cb.dataset.sec]=cb.checked);
     $("#sMsg").textContent="Saving…";
-    try{ await setDoc(siteRef,content,{merge:true}); $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); }
+    try{ await setDoc(siteRef,content,{merge:true}); dirty=false; $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); }
     catch(e){ $("#sMsg").style.color="var(--accent)";$("#sMsg").textContent="Save failed: "+(e.code||e.message); }
   };
 }
