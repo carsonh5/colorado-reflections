@@ -92,7 +92,16 @@ const DEFAULT_CONTENT = {
   },
   hours: "Mon–Fri 9:00a–7:30p · Sat 10:00a–7:30p · Sun 11:00a–7:30p · By appointment.",
   social: { ig: "Colorado_reflections_detail", fb: "", yelp: "https://www.yelp.com/biz/colorado-reflections-mobile-detail-denver", nextdoor: "", igFeedOn: false },
-  booking: { notifyEmail: "carsonhanna5@gmail.com", photoUploadOn: true, emailjs: { serviceId: "service_qj7j8hm", templateId: "template_e0co2tf", publicKey: "uTfhhwQkCNGvQdNli" } },
+  booking: { notifyEmail: "carsonhanna5@gmail.com", photoUploadOn: true, payLink: "", payLabel: "Pay a deposit to lock your spot", payOn: false, emailjs: { serviceId: "service_qj7j8hm", templateId: "template_e0co2tf", publicKey: "uTfhhwQkCNGvQdNli" } },
+  availability: {
+    slotMode: "windows",
+    slots: ["Morning (9–12)", "Midday (12–3)", "Afternoon (3–7)"],
+    openDays: [true, true, true, true, true, true, true], // [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+    vacations: [],   // [{ start:"2026-08-20", end:"2026-08-25", label:"Out of town" }]
+    blocked: [],     // [{ date:"2026-08-14", slot:"Morning (9–12)" }]  (slot omitted = whole day)
+    leadDays: 0,
+    horizonDays: 60
+  },
   sections: { pricing: true, work: true, story: true, reviews: false, area: true, igfeed: false },
   seo: {
     title: "Colorado Reflections Mobile Detail — Detailing Brought to Your Driveway in Denver's North Metro",
@@ -179,6 +188,7 @@ function hydrate() {
   renderPackages();
   renderVehicles();
   renderAddons();
+  renderTimeSlots();
   renderGallery();
   renderStory();
   renderReviews();
@@ -219,6 +229,14 @@ function renderVehicles() {
   if (!seg) return;
   seg.innerHTML = content.vehicles.map((v, i) => `
     <label><input type="radio" name="veh" value="${v.id}" data-add="${v.add}" ${i === 0 ? "checked" : ""}/><span>${esc(v.label)}</span></label>`).join("");
+}
+function renderTimeSlots() {
+  const seg = document.querySelector("#bkTime");
+  if (!seg) return;
+  const slots = (content.availability && content.availability.slots) || [];
+  seg.className = slots.length > 4 ? "seg seg-wrap" : "seg seg-" + Math.min(4, Math.max(1, slots.length));
+  seg.innerHTML = slots.map(s => `
+    <label><input type="radio" name="bktime" value="${esc(s)}" /><span>${esc(s)}</span></label>`).join("");
 }
 function renderAddons() {
   const ex = document.querySelector("#addonList");
@@ -318,6 +336,53 @@ export async function submitBooking(payload) {
 }
 window.__CR_submitBooking = submitBooking;
 
+/* ---- availability: date limits + per-date slot status (pure, reads content.availability) ---- */
+function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function availCfg() {
+  const a = (content && content.availability) || {};
+  return {
+    slots: a.slots || [],
+    openDays: a.openDays || [true, true, true, true, true, true, true],
+    vacations: a.vacations || [],
+    blocked: a.blocked || [],
+    leadDays: Number(a.leadDays) || 0,
+    horizonDays: Number(a.horizonDays) || 60
+  };
+}
+function dateLimits() {
+  const a = availCfg();
+  const min = new Date(); min.setHours(0, 0, 0, 0); min.setDate(min.getDate() + a.leadDays);
+  const max = new Date(); max.setHours(0, 0, 0, 0); max.setDate(max.getDate() + a.horizonDays);
+  return { min: ymd(min), max: ymd(max) };
+}
+function dayStatus(dateStr) {
+  const a = availCfg();
+  if (!dateStr) return { open: true, reason: "" };
+  const lim = dateLimits();
+  if (dateStr < lim.min) return { open: false, reason: "That date has passed — pick an upcoming day." };
+  if (dateStr > lim.max) return { open: false, reason: "That's further out than we book right now." };
+  const dow = new Date(dateStr + "T00:00:00").getDay();
+  if (!a.openDays[dow]) return { open: false, reason: "We're closed that day — please pick another." };
+  const vac = a.vacations.find(v => v && v.start && v.end && dateStr >= v.start && dateStr <= v.end);
+  if (vac) return { open: false, reason: (vac.label ? vac.label + " — " : "") + "we're out that day. Pick another date." };
+  return { open: true, reason: "" };
+}
+function slotIsBlocked(dateStr, slot) {
+  const a = availCfg();
+  return a.blocked.some(b => b && b.date === dateStr && (!b.slot || b.slot === slot));
+}
+// public bridge: what can this customer book on this date?
+window.__CR_bookingAvail = function (dateStr) {
+  const a = availCfg();
+  const st = dayStatus(dateStr);
+  return {
+    open: st.open,
+    reason: st.reason,
+    slots: a.slots.map(s => ({ label: s, available: st.open && !slotIsBlocked(dateStr, s) }))
+  };
+};
+window.__CR_dateLimits = dateLimits;
+
 /* ---- track-your-booking: capability link ?track=<id> (unguessable id = access) ---- */
 async function maybeShowTrack() {
   const m = /[?&]track=([A-Za-z0-9_-]+)/.exec(location.search);
@@ -329,7 +394,7 @@ async function maybeShowTrack() {
     const d = drawer("Your booking", "");
     const body = d.querySelector(".crd-body");
     const row = (k, v) => { if (!v) return; const p = document.createElement("div"); p.className = "trk-row"; const a = document.createElement("b"); a.textContent = k; const s = document.createElement("span"); s.textContent = v; p.append(a, s); body.appendChild(p); };
-    const status = document.createElement("div"); status.className = "trk-status trk-" + (b.status || "new"); status.textContent = ({ new: "Requested — James will confirm", confirmed: "Confirmed ✓", done: "Completed" })[b.status || "new"]; body.appendChild(status);
+    const status = document.createElement("div"); status.className = "trk-status trk-" + (b.status || "new"); status.textContent = ({ new: "Requested — we'll confirm shortly", confirmed: "Confirmed", done: "Completed" })[b.status || "new"]; body.appendChild(status);
     row("Name", b.name); row("Package", b.package); row("Vehicle", b.vehicle);
     row("Estimate", b.estimate); row("Date", b.date); row("Time", b.time); row("Where", b.address);
     const call = document.createElement("a"); call.className = "crbtn crbtn-primary"; call.href = "tel:+1" + (content?.business?.phone || "").replace(/\D/g, ""); call.textContent = "Call James"; body.appendChild(call);
@@ -504,11 +569,11 @@ function markDirty() { dirty = true; }
 
 function enableStructuralControls() {
   // add/remove buttons for packages, addons, gallery, reviews, cities
-  addAdder("#pkgTiers", "＋ package", () => { content.packages.push({ id: "p" + Date.now(), name: "New package", price: 100, list: ["Feature"] }); renderPackages(); reEnter(); });
-  addAdder("#addonList", "＋ add-on", () => { content.addons.push({ id: "a" + Date.now(), label: "New add-on", add: 25 }); renderAddons(); reEnter(); });
-  addAdder("#workGrid", "＋ photo", () => addPhoto());
-  addAdder("#reviewList", "＋ review", () => { content.reviews.push({ name: "Customer", text: "Great work!", source: "" }); renderReviews(); reEnter(); });
-  addAdder("#areaCities", "＋ city", () => { content.area.cities.push("City"); renderCities(); reEnter(); });
+  addAdder("#pkgTiers", "Add package", () => { content.packages.push({ id: "p" + Date.now(), name: "New package", price: 100, list: ["Feature"] }); renderPackages(); reEnter(); });
+  addAdder("#addonList", "Add add-on", () => { content.addons.push({ id: "a" + Date.now(), label: "New add-on", add: 25 }); renderAddons(); reEnter(); });
+  addAdder("#workGrid", "Add photo", () => addPhoto());
+  addAdder("#reviewList", "Add review", () => { content.reviews.push({ name: "Customer", text: "Great work!", source: "" }); renderReviews(); reEnter(); });
+  addAdder("#areaCities", "Add city", () => { content.area.cities.push("City"); renderCities(); reEnter(); });
 }
 function reEnter() { // re-apply edit affordances after a re-render
   if (!editMode) return;
@@ -521,7 +586,10 @@ function addAdder(sel, label, fn) {
   const host = document.querySelector(sel);
   if (!host || host.parentNode.querySelector(".cr-adder")) return;
   const b = document.createElement("button");
-  b.className = "cr-adder"; b.textContent = label; b.onclick = fn;
+  b.className = "cr-adder";
+  b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg><span></span>`;
+  b.querySelector("span").textContent = label;
+  b.onclick = fn;
   host.parentNode.insertBefore(b, host.nextSibling);
 }
 function disableStructuralControls() { document.querySelectorAll(".cr-adder").forEach(b => b.remove()); }
@@ -829,7 +897,8 @@ function injectOwnerStyles() {
   .cr-edit-hint{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9998;background:#2E86F2;color:#fff;padding:8px 16px;border-radius:20px;font:600 13px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.4)}
   body.cr-editing a:not([data-edit]):not([data-ekey]):not(.cr-remove):not(.cr-adder),body.cr-editing button:not(.cr-remove):not(.cr-adder):not(#crSaveBtn):not(#crDone){pointer-events:none}
   body.cr-editing [data-edit],body.cr-editing [data-ekey],body.cr-editing #workGrid img,body.cr-editing [data-field="hero.photo"],body.cr-editing .cr-remove,body.cr-editing .cr-adder{pointer-events:auto}
-  .cr-adder{display:inline-block;margin:10px auto;background:#123;color:#8cf;border:1px dashed #2E86F2;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .cr-adder{display:inline-flex;align-items:center;gap:6px;margin:10px auto;background:#123;color:#8cf;border:1px dashed #2E86F2;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .cr-adder svg{flex:none}
   #crDrawer{position:fixed;inset:0;z-index:10000;font-family:system-ui,sans-serif}
   #crDrawer .crd-scrim{position:absolute;inset:0;background:rgba(0,0,0,.55)}
   #crDrawer .crd-panel{position:absolute;top:0;right:0;height:100%;width:min(420px,92vw);background:#14161a;color:#e8eef4;box-shadow:-10px 0 40px rgba(0,0,0,.5);display:flex;flex-direction:column}

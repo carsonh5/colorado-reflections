@@ -28,6 +28,16 @@ a{color:inherit}
 .btn-danger{background:#3a1618;border-color:#5a2327;color:#ff9aa2}
 .btn-block{width:100%}
 .msg{min-height:1.1em;font-size:.85rem;margin:4px 0 0}
+.fld-in{padding:10px 12px;background:#0f1114;border:1px solid var(--line);border-radius:8px;color:#fff;font-size:.92rem;font-family:inherit;min-width:0}
+.av-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.av-row:last-child{border-bottom:none}
+.av-row .fld-in{flex:1}
+.av-label{flex:1;font-size:.9rem;color:#fff}
+.av-label .sub{color:var(--muted);font-size:.78rem;margin-top:2px}
+.btn-icon{padding:8px;line-height:0;flex:none}
+.btn-icon svg{width:14px;height:14px}
+.av-add{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.av-add .fld-in{flex:1;min-width:120px}
 /* shell */
 #app{display:none;min-height:100vh;grid-template-columns:230px 1fr}
 #mEdit{display:none}
@@ -113,6 +123,7 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
     <div class="brand">Colorado Reflections<small>Admin</small></div>
     <div class="navlink active" data-view="overview">Overview</div>
     <div class="navlink" data-view="bookings">Bookings <span class="dot"></span></div>
+    <div class="navlink" data-view="availability">Availability</div>
     <div class="navlink" data-view="customers">Customers</div>
     <div class="navlink" data-view="promos">Promos</div>
     <div class="navlink" data-view="settings">Settings</div>
@@ -138,6 +149,7 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
     </section>
 
     <section class="view" id="v-bookings"><div class="panel" id="bookingsPanel"><div class="empty">Loading…</div></div></section>
+    <section class="view" id="v-availability"><div class="grid2" id="availGrid"><div class="empty">Loading…</div></div></section>
     <section class="view" id="v-customers"><div class="panel" id="customersPanel"><div class="empty">Loading…</div></div></section>
 
     <section class="view" id="v-promos">
@@ -157,6 +169,7 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
     <nav id="tabbar">
       <a data-view="overview" class="active"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg></span>Home</a>
       <a data-view="bookings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18"/></svg></span>Bookings</a>
+      <a data-view="availability"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="M12 13v3l2 1"/></svg></span>Calendar</a>
       <a data-view="customers"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5.5a3 3 0 0 1 0 5.8"/><path d="M21 20a6 6 0 0 0-4-5"/></svg></span>Customers</a>
       <a data-view="promos"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>Promos</a>
       <a data-view="settings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
@@ -179,6 +192,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = n => "$"+Number(n).toLocaleString();
 const priceNum = e => { const m=/\d[\d,]*/.exec(String(e||"")); return m?+m[0].replace(/,/g,""):0; };
+const xSvg = () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
 
 let content=null, bookings=[], user=null;
 
@@ -199,13 +213,13 @@ onAuthStateChanged(auth, async (u) => {
 async function loadAll(){
   try { const s=await getDoc(siteRef); content = s.exists()?s.data():{}; } catch(e){ content={}; }
   try { const snap=await getDocs(query(collection(db,"sites",SITE_ID,"bookings"),orderBy("created","desc"))); bookings=[]; snap.forEach(d=>bookings.push({id:d.id,...d.data()})); } catch(e){ bookings=[]; }
-  renderOverview(); renderBookings(); renderCustomers(); renderSettings(); renderPromoMeta();
+  renderOverview(); renderBookings(); renderAvailability(); renderCustomers(); renderSettings(); renderPromoMeta();
   const newCount = bookings.filter(b=>(b.status||"new")==="new").length;
   document.querySelectorAll('[data-view="bookings"]').forEach(el=>el.classList.toggle("has", newCount>0));
 }
 
 /* ---- nav (sidebar + mobile bottom tab bar, kept in sync) ---- */
-const TITLES={overview:"Overview",bookings:"Bookings",customers:"Customers",promos:"Promos",settings:"Settings"};
+const TITLES={overview:"Overview",bookings:"Bookings",availability:"Availability",customers:"Customers",promos:"Promos",settings:"Settings"};
 function showView(v){
   document.querySelectorAll(".navlink, #tabbar a").forEach(x=>x.classList.toggle("active", x.dataset.view===v));
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
@@ -256,10 +270,89 @@ function bindRowActions(scope){
     row.querySelectorAll("[data-act]").forEach(btn=>btn.onclick=async()=>{
       const act=btn.dataset.act, ref=doc(db,"sites",SITE_ID,"bookings",id);
       if(act==="del"){ if(!confirm("Delete this booking?"))return; await deleteDoc(ref); bookings=bookings.filter(b=>b.id!==id); }
-      else { const status=act==="confirm"?"confirmed":"done"; await updateDoc(ref,{status}); const b=bookings.find(x=>x.id===id); if(b)b.status=status; }
-      renderBookings(); renderOverview();
+      else { const status=act==="confirm"?"confirmed":"done"; await updateDoc(ref,{status}); const b=bookings.find(x=>x.id===id); if(b)b.status=status;
+        if(act==="confirm" && b && b.date){ await blockSlotForBooking(b); } }
+      renderBookings(); renderOverview(); renderAvailability();
     });
   });
+}
+
+/* ---- availability ---- */
+const DOW=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+function availState(){
+  const a = content.availability || (content.availability={});
+  a.slots = a.slots || ["Morning (9–12)","Midday (12–3)","Afternoon (3–7)"];
+  a.openDays = (Array.isArray(a.openDays)&&a.openDays.length===7) ? a.openDays : [true,true,true,true,true,true,true];
+  a.vacations = a.vacations || [];
+  a.blocked = a.blocked || [];
+  a.leadDays = Number(a.leadDays)||0;
+  a.horizonDays = Number(a.horizonDays)||60;
+  return a;
+}
+function renderAvailability(){
+  const a=availState();
+  const slotRows = a.slots.map((s,i)=>`<div class="av-row"><input class="fld-in" data-slot="${i}" value="${esc(s)}"><button class="btn btn-danger btn-icon" data-slotdel="${i}" title="Remove">${xSvg()}</button></div>`).join("") || `<p class="hint">No time slots yet — add one below.</p>`;
+  const dayRows = DOW.map((d,i)=>`<label class="togg"><span>${d}</span><input type="checkbox" data-day="${i}" ${a.openDays[i]?"checked":""}></label>`).join("");
+  const vacRows = a.vacations.length ? a.vacations.map((v,i)=>`<div class="av-row"><span class="av-label">${esc(v.label||"Day off")}<div class="sub">${esc(v.start||"")}${v.end&&v.end!==v.start?" → "+esc(v.end):""}</div></span><button class="btn btn-danger btn-icon" data-vacdel="${i}" title="Remove">${xSvg()}</button></div>`).join("") : `<p class="hint">No days off added. You're bookable every open day.</p>`;
+  const blkRows = a.blocked.length ? a.blocked.slice().sort((x,y)=>(x.date||"").localeCompare(y.date||"")).map((b)=>{const i=a.blocked.indexOf(b);return `<div class="av-row"><span class="av-label">${esc(b.date||"")}<div class="sub">${b.slot?esc(b.slot):"Whole day"}</div></span><button class="btn btn-danger btn-icon" data-blkdel="${i}" title="Unblock">${xSvg()}</button></div>`;}).join("") : `<p class="hint">Nothing blocked. Confirmed bookings block their slot automatically.</p>`;
+  const slotOpts = a.slots.map(s=>`<option value="${esc(s)}">`).join("");
+  $("#availGrid").innerHTML = `
+    <div class="card"><h3>Booking time slots</h3>
+      <p class="hint">These are the time choices a customer picks from. Use windows (Morning/Midday) or exact times — up to you.</p>
+      <div id="slotList">${slotRows}</div>
+      <div class="right" style="margin-top:8px;gap:6px;flex-wrap:wrap;justify-content:flex-start">
+        <button class="btn" id="slotAdd">Add a time slot</button>
+        <button class="btn" id="slotPreW">Use morning / midday / afternoon</button>
+        <button class="btn" id="slotPreH">Use hourly 8–5</button>
+      </div>
+    </div>
+    <div class="card"><h3>Days you're open</h3>
+      <p class="hint">Turn a day off and customers can't book it. Flip weekends off if you don't work them.</p>
+      ${dayRows}
+    </div>
+    <div class="card"><h3>Days off &amp; vacation</h3>
+      <p class="hint">Add a date or a range you're away — those days grey out for customers.</p>
+      <div id="vacList">${vacRows}</div>
+      <div class="av-add"><input type="date" id="vacStart" class="fld-in"><input type="date" id="vacEnd" class="fld-in" title="End (optional)"><input id="vacLabel" class="fld-in" placeholder="Reason (optional)"><button class="btn" id="vacAdd">Add</button></div>
+    </div>
+    <div class="card"><h3>Block a specific slot</h3>
+      <p class="hint">Booked someone by phone? Block that date &amp; time so no one else grabs it.</p>
+      <div id="blkList">${blkRows}</div>
+      <datalist id="slotDL">${slotOpts}</datalist>
+      <div class="av-add"><input type="date" id="blkDate" class="fld-in"><input id="blkSlot" class="fld-in" list="slotDL" placeholder="Time (blank = whole day)"><button class="btn" id="blkAdd">Block</button></div>
+    </div>
+    <div class="card"><h3>Booking window</h3>
+      <label class="fld">Earliest a customer can book <select id="avLead"><option value="0">Same day</option><option value="1">1 day ahead</option><option value="2">2 days ahead</option><option value="3">3 days ahead</option></select></label>
+      <label class="fld">How far out they can book <select id="avHorizon"><option value="14">2 weeks</option><option value="30">1 month</option><option value="60">2 months</option><option value="90">3 months</option></select></label>
+    </div>
+    <div class="card" style="grid-column:1/-1"><button class="btn btn-primary btn-block" id="avSave">Save availability</button><p class="msg" id="avMsg"></p></div>`;
+  $("#avLead").value=String(a.leadDays); $("#avHorizon").value=String([14,30,60,90].includes(a.horizonDays)?a.horizonDays:60);
+  // wire
+  $("#slotList").querySelectorAll("[data-slot]").forEach(inp=>inp.oninput=()=>{a.slots[+inp.dataset.slot]=inp.value;});
+  $("#slotList").querySelectorAll("[data-slotdel]").forEach(b=>b.onclick=()=>{a.slots.splice(+b.dataset.slotdel,1);renderAvailability();});
+  $("#slotAdd").onclick=()=>{a.slots.push("New time");renderAvailability();};
+  $("#slotPreW").onclick=()=>{a.slots=["Morning (9–12)","Midday (12–3)","Afternoon (3–7)"];renderAvailability();};
+  $("#slotPreH").onclick=()=>{a.slots=["8:00","9:00","10:00","11:00","12:00","1:00","2:00","3:00","4:00","5:00"];renderAvailability();};
+  $("#availGrid").querySelectorAll("[data-day]").forEach(cb=>cb.onchange=()=>{a.openDays[+cb.dataset.day]=cb.checked;});
+  $("#availGrid").querySelectorAll("[data-vacdel]").forEach(b=>b.onclick=()=>{a.vacations.splice(+b.dataset.vacdel,1);renderAvailability();});
+  $("#vacAdd").onclick=()=>{const s=$("#vacStart").value;if(!s){$("#avMsg").textContent="Pick a start date.";return;}a.vacations.push({start:s,end:$("#vacEnd").value||s,label:$("#vacLabel").value.trim()});renderAvailability();};
+  $("#availGrid").querySelectorAll("[data-blkdel]").forEach(b=>b.onclick=()=>{a.blocked.splice(+b.dataset.blkdel,1);renderAvailability();});
+  $("#blkAdd").onclick=()=>{const d=$("#blkDate").value;if(!d){$("#avMsg").textContent="Pick a date to block.";return;}a.blocked.push({date:d,slot:$("#blkSlot").value.trim()});renderAvailability();};
+  $("#avSave").onclick=async()=>{
+    a.leadDays=+$("#avLead").value; a.horizonDays=+$("#avHorizon").value;
+    a.slots=a.slots.map(s=>String(s).trim()).filter(Boolean);
+    $("#avMsg").style.color="var(--muted)";$("#avMsg").textContent="Saving…";
+    try{ await setDoc(siteRef,{availability:a},{merge:true}); $("#avMsg").style.color="var(--ok)";$("#avMsg").textContent="Saved"; }
+    catch(e){ $("#avMsg").style.color="var(--accent)";$("#avMsg").textContent="Save failed: "+(e.code||e.message); }
+  };
+}
+
+async function blockSlotForBooking(b){
+  const a=availState();
+  const exists=a.blocked.some(x=>x.date===b.date && (x.slot||"")===(b.time||""));
+  if(exists) return;
+  a.blocked.push({date:b.date, slot:b.time||""});
+  try{ await setDoc(siteRef,{availability:a},{merge:true}); }catch(e){}
 }
 
 /* ---- customers ---- */
@@ -318,6 +411,12 @@ function renderSettings(){
       <p class="hint" id="ejStatus"></p>
       <p class="hint">Booking and promo emails are set up and running. To change where alerts land, edit <b>Booking notifications go to</b> under Operations above. Nothing else to manage here.</p>
     </div>
+    <div class="card"><h3>Online payments (optional)</h3>
+      <p class="hint">Want customers to pay a deposit or pay online? Create a free <b>Stripe Payment Link</b> at stripe.com, paste it below, and a Pay button appears after they book. Money goes straight to your Stripe — we never touch it.</p>
+      <div class="togg"><span>Show a Pay button after booking</span><input id="sPayOn" type="checkbox"></div>
+      <label class="fld">Stripe Payment Link URL <input id="sPayLink" placeholder="https://buy.stripe.com/..."></label>
+      <label class="fld">Button label <input id="sPayLabel" placeholder="Pay a deposit to lock your spot"></label>
+    </div>
     <div class="card"><h3>Storage</h3><div class="meter"><span style="width:${pct}%"></span></div>
       <p class="hint">${kb} KB of 1024 KB used (photos live here).</p></div>
     <div class="card"><h3>Account & domain</h3>
@@ -330,10 +429,12 @@ function renderSettings(){
   { const ej=b.emailjs||{}, ok=!!(ej.serviceId&&ej.templateId&&ej.publicKey), es=$("#ejStatus");
     if(es){ es.innerHTML = ok ? "<b style='color:var(--ok)'>On</b> — booking &amp; promo emails are active." : "<b style='color:var(--accent)'>Off</b> — contact us to switch email on."; } }
   document.querySelectorAll("[data-sec]").forEach(cb=>cb.checked=!!sec[cb.dataset.sec]);
+  $("#sPayOn").checked=!!b.payOn; set("sPayLink",b.payLink); set("sPayLabel",b.payLabel);
   $("#sPw").onclick=()=>sendPasswordResetEmail(auth,user.email).then(()=>alert("Reset link sent to "+user.email)).catch(e=>alert("Failed: "+e.code));
   $("#sSave").onclick=async()=>{
     s.ig=$("#sIg").value.trim();s.fb=$("#sFb").value.trim();s.yelp=$("#sYelp").value.trim();s.nextdoor=$("#sNd").value.trim();s.igFeedOn=$("#sIgFeed").checked;
     content.hours=$("#sHours").value.trim(); b.notifyEmail=$("#sNotify").value.trim(); (content.brand=content.brand||{}).accent=$("#sAccent").value;
+    b.payOn=$("#sPayOn").checked; b.payLink=$("#sPayLink").value.trim(); b.payLabel=$("#sPayLabel").value.trim();
     document.querySelectorAll("[data-sec]").forEach(cb=>sec[cb.dataset.sec]=cb.checked);
     $("#sMsg").textContent="Saving…";
     try{ await setDoc(siteRef,content,{merge:true}); $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); }

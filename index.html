@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="./styles.css?v=5" />
+<link rel="stylesheet" href="./styles.css?v=6" />
 </head>
 <body>
 
@@ -35,7 +35,7 @@
   <div class="hero-veil"></div>
   <div class="shell hero-in">
     <h1><span data-field="hero.headline">Showroom finish.</span><br><em data-field="hero.em">Your driveway.</em></h1>
-    <p class="hero-sub" data-field="hero.sub">Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office across Denver's north metro.</p>
+    <p class="hero-sub" data-field="hero.sub">Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office across Thornton, Westminster, Arvada and the north Denver metro.</p>
     <div class="hero-act">
       <a class="btn" href="#pricing">Build your quote</a>
       <a class="btn-quiet" data-phone data-phone-text href="tel:+13035898214">Call or Text (303) 589-8214</a>
@@ -51,7 +51,7 @@
     <div class="sec-head">
       <p class="over">Pricing</p>
       <h2>Pick a package. See your price as you go.</h2>
-      <p class="sec-lead" data-field="pricingLead">Pick a package, add your vehicle and any extras, and your price updates as you go — no waiting on a callback. James confirms the final number after a couple of quick photos.</p>
+      <p class="sec-lead" data-field="pricingLead">Pick a package, add your vehicle and any extras, and your price updates as you go — no waiting on a callback. We confirm the final number after a couple of quick photos.</p>
     </div>
 
     <form id="quote">
@@ -176,12 +176,9 @@
       <h3 id="bkTitle">A couple details and we'll lock it in.</h3>
       <div class="bk-summary" id="bkSummary"></div>
       <div class="bk-field"><label class="build-label" for="bkDate">Preferred date</label><input type="date" id="bkDate" class="bk-input" /></div>
-      <div class="bk-field"><span class="build-label">Time window</span>
-        <div class="seg seg-3" id="bkTime" role="radiogroup" aria-label="Time window">
-          <label><input type="radio" name="bktime" value="Morning (9–12)" /><span>Morning</span></label>
-          <label><input type="radio" name="bktime" value="Midday (12–3)" /><span>Midday</span></label>
-          <label><input type="radio" name="bktime" value="Afternoon (3–7)" /><span>Afternoon</span></label>
-        </div>
+      <div class="bk-field"><span class="build-label">Time</span>
+        <div class="seg seg-3" id="bkTime" role="radiogroup" aria-label="Time"></div>
+        <p class="bk-slotnote" id="bkSlotNote"></p>
       </div>
       <div class="bk-grid">
         <div class="bk-field"><label class="build-label" for="bkName">Name</label><input type="text" id="bkName" class="bk-input" autocomplete="name" /></div>
@@ -195,9 +192,10 @@
       <p class="est-fine">No charge yet. We text you to confirm the time and final price, then you're booked.</p>
     </div>
     <div class="bk-step" id="bkDone" hidden>
-      <div class="bk-check" aria-hidden="true">✓</div>
+      <div class="bk-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><path d="M20 6 9 17l-5-5"/></svg></div>
       <h3>You're on the list.</h3>
       <p class="bk-done-note" id="bkDoneNote"></p>
+      <a class="btn btn-primary btn-block" id="bkPay" href="#" target="_blank" rel="noopener" hidden>Pay a deposit</a>
       <a class="btn btn-block" id="bkText" href="#">Text us to confirm now</a>
       <a class="btn-quiet" id="bkTrack" href="#" hidden style="display:block;text-align:center;margin-top:10px">Track your booking →</a>
       <button type="button" class="btn-quiet bk-restart" id="bkRestart">Edit my request</button>
@@ -206,7 +204,7 @@
 </div>
 
 <script src="./firebase-config.js"></script>
-<script type="module" src="./app.js?v=13"></script>
+<script type="module" src="./app.js?v=14"></script>
 
 <!-- Quote engine + booking + lightbox + map (coordinates with app.js via window.__CR_*) -->
 <script>
@@ -279,7 +277,29 @@
     summary.innerHTML=html; stepDone.hidden=true; stepForm.hidden=false;
     bk.classList.add('on'); bk.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden';
     document.getElementById('bkErr').hidden=true;
+    applyDateLimits(); refreshSlots();
   }
+  var dateEl=document.getElementById('bkDate'), slotNote=document.getElementById('bkSlotNote');
+  function applyDateLimits(){
+    if(!window.__CR_dateLimits) return;
+    var lim=window.__CR_dateLimits(); dateEl.min=lim.min; dateEl.max=lim.max;
+  }
+  function refreshSlots(){
+    if(!window.__CR_bookingAvail) return;
+    var d=dateEl.value, av=window.__CR_bookingAvail(d);
+    var radios=bk.querySelectorAll('input[name="bktime"]'); var anyOpen=false;
+    radios.forEach(function(r){
+      var s=av.slots.find(function(x){return x.label===r.value;});
+      var ok=!d || (s?s.available:true);   // before a date is picked, all show as selectable
+      r.disabled=!ok; if(ok) anyOpen=true;
+      if(!ok && r.checked) r.checked=false;
+    });
+    if(!d){ slotNote.textContent=''; slotNote.className='bk-slotnote'; }
+    else if(!av.open){ slotNote.textContent=av.reason; slotNote.className='bk-slotnote warn'; }
+    else if(!anyOpen){ slotNote.textContent="That day's fully booked — please pick another date."; slotNote.className='bk-slotnote warn'; }
+    else { slotNote.textContent=''; slotNote.className='bk-slotnote'; }
+  }
+  dateEl.addEventListener('change', refreshSlots);
   function closeBk(){ bk.classList.remove('on'); bk.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
   document.getElementById('bookBtn').addEventListener('click', openBk);
   document.getElementById('bkClose').addEventListener('click', closeBk);
@@ -288,8 +308,12 @@
 
   document.getElementById('bkSubmit').addEventListener('click', function(){
     var name=document.getElementById('bkName').value.trim(), phone=document.getElementById('bkPhone').value.trim();
-    if(!name||!phone){ document.getElementById('bkErr').hidden=false; return; }
+    if(!name||!phone){ var e0=document.getElementById('bkErr'); e0.textContent='Add your name and a mobile number so we can confirm.'; e0.hidden=false; return; }
     var date=document.getElementById('bkDate').value, t=bk.querySelector('input[name="bktime"]:checked'), addr=document.getElementById('bkAddr').value.trim();
+    if(date && window.__CR_bookingAvail){
+      var av=window.__CR_bookingAvail(date);
+      if(!av.open){ var er=document.getElementById('bkErr'); er.textContent=av.reason||"Please pick an available date."; er.hidden=false; return; }
+    }
     var q=getQuote();
     var email=document.getElementById('bkEmail').value.trim();
     var payload={ name:name, phone:phone, email:email, date:date||'', time:t?t.value:'', address:addr,
@@ -302,6 +326,9 @@
     if(date) lines.push('Date: '+date); if(t) lines.push('Time: '+t.value); if(addr) lines.push('Location: '+addr); lines.push('Phone: '+phone);
     document.getElementById('bkText').href='sms:'+PHONERAW+'?&body='+encodeURIComponent(lines.join('\n'));
     document.getElementById('bkDoneNote').textContent="We'll text "+phone+' to confirm your time'+(date?' on '+date:'')+' and the final price.';
+    var pay=document.getElementById('bkPay'), bcfg=(C().booking)||{};
+    if(pay){ var pl=String(bcfg.payLink||''); var okPay=bcfg.payOn && /^https?:\/\//i.test(pl);
+      if(okPay){ pay.href=pl; pay.textContent=bcfg.payLabel||'Pay a deposit to lock your spot'; pay.hidden=false; } else { pay.hidden=true; } }
     stepForm.hidden=true; stepDone.hidden=false;
   });
   document.getElementById('bkRestart').addEventListener('click', function(){ stepDone.hidden=true; stepForm.hidden=false; });
