@@ -187,6 +187,7 @@
         <div class="bk-field"><label class="build-label" for="bkName">Name</label><input type="text" id="bkName" class="bk-input" autocomplete="name" /></div>
         <div class="bk-field"><label class="build-label" for="bkPhone">Mobile</label><input type="tel" id="bkPhone" class="bk-input" autocomplete="tel" placeholder="(720) 555-0199" /></div>
       </div>
+      <div class="bk-field"><label class="build-label" for="bkEmail">Email <span style="opacity:.6">(optional — for updates &amp; offers)</span></label><input type="email" id="bkEmail" class="bk-input" autocomplete="email" /></div>
       <div class="bk-field"><label class="build-label" for="bkAddr">Where we're coming (address or area)</label><input type="text" id="bkAddr" class="bk-input" autocomplete="street-address" placeholder="Street, city" /></div>
       <div class="bk-field" id="bkPhotoField"><label class="build-label">Add photos of your vehicle (optional)</label><input type="file" id="bkPhotos" accept="image/*" multiple /></div>
       <p class="bk-err" id="bkErr" hidden>Add your name and a mobile number so we can confirm.</p>
@@ -198,13 +199,14 @@
       <h3>You're on the list.</h3>
       <p class="bk-done-note" id="bkDoneNote"></p>
       <a class="btn btn-block" id="bkText" href="#">Text us to confirm now</a>
+      <a class="btn-quiet" id="bkTrack" href="#" hidden style="display:block;text-align:center;margin-top:10px">Track your booking →</a>
       <button type="button" class="btn-quiet bk-restart" id="bkRestart">Edit my request</button>
     </div>
   </div>
 </div>
 
 <script src="./firebase-config.js"></script>
-<script type="module" src="./app.js?v=5"></script>
+<script type="module" src="./app.js?v=6"></script>
 
 <!-- Quote engine + booking + lightbox + map (coordinates with app.js via window.__CR_*) -->
 <script>
@@ -289,10 +291,13 @@
     if(!name||!phone){ document.getElementById('bkErr').hidden=false; return; }
     var date=document.getElementById('bkDate').value, t=bk.querySelector('input[name="bktime"]:checked'), addr=document.getElementById('bkAddr').value.trim();
     var q=getQuote();
-    var payload={ name:name, phone:phone, date:date||'', time:t?t.value:'', address:addr,
+    var email=document.getElementById('bkEmail').value.trim();
+    var payload={ name:name, phone:phone, email:email, date:date||'', time:t?t.value:'', address:addr,
       package:q.pkg||'Custom', vehicle:q.veh||'', estimate:q.hasPkg?money(q.total):'by text',
       addons:q.extras.filter(function(x){return !x.included;}).map(function(x){return x.name;}).join(', ') };
-    if(window.__CR_submitBooking) window.__CR_submitBooking(payload);
+    if(window.__CR_submitBooking){ window.__CR_submitBooking(payload).then(function(id){
+      if(id){ var tr=document.getElementById('bkTrack'); tr.href=location.origin+location.pathname+'?track='+id; tr.hidden=false; }
+    }); }
     var lines=['Detail request — '+name]; if(q.hasPkg) lines.push(q.pkg+(q.veh?' ('+q.veh+')':'')+' — '+money(q.total)+' est.');
     if(date) lines.push('Date: '+date); if(t) lines.push('Time: '+t.value); if(addr) lines.push('Location: '+addr); lines.push('Phone: '+phone);
     document.getElementById('bkText').href='sms:'+PHONERAW+'?&body='+encodeURIComponent(lines.join('\n'));

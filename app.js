@@ -16,7 +16,7 @@ import {
   sendPasswordResetEmail, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs,
+  getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, addDoc, getDocs,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -119,6 +119,7 @@ async function load() {
   }
   hydrate();
   mountOwnerBar();
+  maybeShowTrack();
 }
 
 function deepMerge(base, over) {
@@ -286,9 +287,11 @@ function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ 
    BOOKINGS  (public create → Firestore + optional EmailJS)
    ============================================================ */
 export async function submitBooking(payload) {
-  const record = { ...payload, site: SITE_ID, created: serverTimestamp() };
+  const record = { ...payload, site: SITE_ID, status: "new", created: serverTimestamp() };
+  let id = null;
   try {
-    await addDoc(collection(db, "sites", SITE_ID, "bookings"), record);
+    const ref = await addDoc(collection(db, "sites", SITE_ID, "bookings"), record);
+    id = ref.id;
   } catch (e) { console.warn("Booking save failed:", e); }
   // optional email via EmailJS if configured
   const ej = content?.booking?.emailjs;
@@ -298,8 +301,27 @@ export async function submitBooking(payload) {
         { to_email: content.booking.notifyEmail, ...payload }, { publicKey: ej.publicKey });
     } catch (e) { console.warn("EmailJS failed:", e); }
   }
+  return id;
 }
 window.__CR_submitBooking = submitBooking;
+
+/* ---- track-your-booking: capability link ?track=<id> (unguessable id = access) ---- */
+async function maybeShowTrack() {
+  const m = /[?&]track=([A-Za-z0-9_-]+)/.exec(location.search);
+  if (!m) return;
+  try {
+    const snap = await getDoc(doc(db, "sites", SITE_ID, "bookings", m[1]));
+    if (!snap.exists()) return;
+    const b = snap.data();
+    const d = drawer("Your booking", "");
+    const body = d.querySelector(".crd-body");
+    const row = (k, v) => { if (!v) return; const p = document.createElement("div"); p.className = "trk-row"; const a = document.createElement("b"); a.textContent = k; const s = document.createElement("span"); s.textContent = v; p.append(a, s); body.appendChild(p); };
+    const status = document.createElement("div"); status.className = "trk-status trk-" + (b.status || "new"); status.textContent = ({ new: "Requested — James will confirm", confirmed: "Confirmed ✓", done: "Completed" })[b.status || "new"]; body.appendChild(status);
+    row("Name", b.name); row("Package", b.package); row("Vehicle", b.vehicle);
+    row("Estimate", b.estimate); row("Date", b.date); row("Time", b.time); row("Where", b.address);
+    const call = document.createElement("a"); call.className = "crbtn crbtn-primary"; call.href = "tel:+1" + (content?.business?.phone || "").replace(/\D/g, ""); call.textContent = "Call James"; body.appendChild(call);
+  } catch (e) { console.warn("track failed", e); }
+}
 
 /* ============================================================
    OWNER BAR + AUTH
@@ -316,6 +338,7 @@ function mountOwnerBar() {
       <button id="crSettingsBtn">Settings</button>
       <button id="crSaveBtn" hidden>Save</button>
       <button id="crBookingsBtn">Bookings</button>
+      <button id="crCustomersBtn">Customers</button>
       <button id="crLogout">Sign out</button>
     </div>`;
   document.body.appendChild(bar);
@@ -328,6 +351,7 @@ function mountOwnerBar() {
   document.getElementById("crSaveBtn").onclick = saveContent;
   document.getElementById("crSettingsBtn").onclick = openSettings;
   document.getElementById("crBookingsBtn").onclick = openBookings;
+  document.getElementById("crCustomersBtn").onclick = openCustomers;
   document.getElementById("crLogout").onclick = () => signOut(auth);
 
   const adminMode = /(?:[?&#])(?:admin|edit)/i.test(location.search + location.hash);
@@ -580,26 +604,116 @@ function openSettings() {
   };
 }
 
+async function fetchBookings() {
+  const q = query(collection(db, "sites", SITE_ID, "bookings"), orderBy("created", "desc"));
+  const snap = await getDocs(q);
+  const out = [];
+  snap.forEach(s => out.push({ id: s.id, ...s.data() }));
+  return out;
+}
+function priceNum(estimate) { const m = /\d[\d,]*/.exec(String(estimate || "")); return m ? +m[0].replace(/,/g, "") : 0; }
+
 async function openBookings() {
   if (!currentUser) return;
   const d = drawer("Bookings", `<div id="bkList">Loading…</div>`);
-  try {
-    const q = query(collection(db, "sites", SITE_ID, "bookings"), orderBy("created", "desc"));
-    const snap = await getDocs(q);
-    const list = d.querySelector("#bkList");
+  const list = d.querySelector("#bkList");
+  const render = (rows) => {
     list.textContent = "";
-    if (snap.empty) { list.textContent = "No bookings yet. They'll appear here the moment someone books."; return; }
-    snap.forEach(doc => {
-      const b = doc.data();
-      const card = document.createElement("div");
-      card.className = "bk-card";
-      const line = (k, v) => { if (!v) return; const p = document.createElement("div"); p.innerHTML = `<b></b> <span></span>`; p.querySelector("b").textContent = k + ":"; p.querySelector("span").textContent = v; card.appendChild(p); };
-      line("Name", b.name); line("Phone", b.phone); line("Package", b.package);
+    if (!rows.length) { list.textContent = "No bookings yet. They'll appear here the moment someone books."; return; }
+    rows.forEach(b => {
+      const card = document.createElement("div"); card.className = "bk-card";
+      const badge = document.createElement("span"); badge.className = "bk-badge bk-" + (b.status || "new");
+      badge.textContent = ({ new: "New", confirmed: "Confirmed", done: "Done" })[b.status || "new"]; card.appendChild(badge);
+      const line = (k, v) => { if (!v) return; const p = document.createElement("div"); const a = document.createElement("b"); a.textContent = k + ": "; const s = document.createElement("span"); s.textContent = v; p.append(a, s); card.appendChild(p); };
+      line("Name", b.name); line("Phone", b.phone); line("Email", b.email); line("Package", b.package);
       line("Vehicle", b.vehicle); line("Estimate", b.estimate); line("Add-ons", b.addons);
       line("Date", b.date); line("Time", b.time); line("Where", b.address);
+      const acts = document.createElement("div"); acts.className = "bk-acts";
+      const btn = (label, fn, cls) => { const x = document.createElement("button"); x.className = "crbtn" + (cls ? " " + cls : ""); x.textContent = label; x.onclick = fn; acts.appendChild(x); };
+      if ((b.status || "new") === "new") btn("Confirm", async () => { await updateDoc(doc(db, "sites", SITE_ID, "bookings", b.id), { status: "confirmed" }); b.status = "confirmed"; render(rows); });
+      if ((b.status || "new") !== "done") btn("Mark done", async () => { await updateDoc(doc(db, "sites", SITE_ID, "bookings", b.id), { status: "done" }); b.status = "done"; render(rows); });
+      btn("Delete", async () => { if (!confirm("Delete this booking?")) return; await deleteDoc(doc(db, "sites", SITE_ID, "bookings", b.id)); render(rows.filter(r => r.id !== b.id)); }, "crbtn-danger");
+      card.appendChild(acts);
       list.appendChild(card);
     });
-  } catch (e) { d.querySelector("#bkList").textContent = "Could not load bookings: " + (e.code || e.message); }
+  };
+  try { render(await fetchBookings()); }
+  catch (e) { list.textContent = "Could not load bookings: " + (e.code || e.message); }
+}
+
+/* ---- CUSTOMERS CRM: group bookings by phone → history, repeats, total, follow-up ---- */
+async function openCustomers() {
+  if (!currentUser) return;
+  const d = drawer("Customers", `<div id="custWrap">Loading…</div>`);
+  const wrap = d.querySelector("#custWrap");
+  let rows;
+  try { rows = await fetchBookings(); } catch (e) { wrap.textContent = "Could not load: " + (e.code || e.message); return; }
+  // group by phone (fallback name)
+  const map = {};
+  rows.forEach(b => {
+    const key = (b.phone || b.name || "").replace(/\D/g, "") || b.name || "unknown";
+    (map[key] = map[key] || { name: b.name, phone: b.phone, email: b.email, visits: [], total: 0 }).visits.push(b);
+  });
+  const custs = Object.values(map).map(c => {
+    c.total = c.visits.reduce((s, v) => s + priceNum(v.estimate), 0);
+    c.email = c.email || c.visits.map(v => v.email).find(Boolean) || "";
+    c.count = c.visits.length;
+    return c;
+  }).sort((a, b) => b.count - a.count);
+  const withEmail = custs.filter(c => c.email).length;
+
+  wrap.textContent = "";
+  const sum = document.createElement("div"); sum.className = "cust-sum";
+  sum.textContent = `${custs.length} customers · ${custs.filter(c => c.count > 1).length} repeat · ${withEmail} with email`;
+  wrap.appendChild(sum);
+  const promoBtn = document.createElement("button"); promoBtn.className = "crbtn crbtn-primary"; promoBtn.style.width = "100%"; promoBtn.textContent = "Send a promo →";
+  promoBtn.onclick = () => openPromo(custs);
+  wrap.appendChild(promoBtn);
+
+  custs.forEach(c => {
+    const card = document.createElement("div"); card.className = "cust-card";
+    const h = document.createElement("div"); h.className = "cust-head";
+    const nm = document.createElement("b"); nm.textContent = c.name || "(no name)";
+    const tag = document.createElement("span"); tag.className = "cust-tag" + (c.count > 1 ? " repeat" : "");
+    tag.textContent = c.count > 1 ? c.count + "× repeat" : "new"; h.append(nm, tag); card.appendChild(h);
+    const meta = document.createElement("div"); meta.className = "cust-meta";
+    meta.textContent = [c.phone, c.email, "~$" + c.total.toLocaleString() + " total", "last: " + (c.visits[0].date || "—")].filter(Boolean).join(" · ");
+    card.appendChild(meta);
+    wrap.appendChild(card);
+  });
+}
+
+function openPromo(custs) {
+  const emails = custs.map(c => c.email).filter(Boolean);
+  const phones = custs.map(c => c.phone).filter(Boolean);
+  const ej = content?.booking?.emailjs;
+  const d = drawer("Send a promo", `
+    <div class="crf">Audience: <b>${custs.length}</b> customers — <b>${emails.length}</b> have email, <b>${phones.length}</b> have a phone.</div>
+    <label class="crf">Subject <input id="promoSubj" placeholder="20% off your next detail"></label>
+    <label class="crf">Message <textarea id="promoMsg" rows="5" style="width:100%;background:#0f1114;border:1px solid #2b323b;border-radius:6px;color:#fff;padding:9px"></textarea></label>
+    <p class="crf" id="promoMode"></p>
+    <button id="promoSend" class="crbtn crbtn-primary" style="width:100%">Send email promo (${emails.length})</button>
+    <button id="promoSms" class="crbtn" style="width:100%">Copy phone list for texting (${phones.length})</button>
+    <p class="crf" id="promoOut" style="min-height:1.1em"></p>
+  `);
+  const out = (t, ok) => { const o = d.querySelector("#promoOut"); o.textContent = t; o.style.color = ok ? "#7fd47f" : "#f0a"; };
+  if (!(ej && ej.serviceId && ej.templateId && ej.publicKey)) {
+    d.querySelector("#promoMode").textContent = "Email sending needs a free EmailJS key in Settings first. You can still copy the phone list to text.";
+    d.querySelector("#promoSend").disabled = true;
+  }
+  d.querySelector("#promoSms").onclick = () => {
+    navigator.clipboard.writeText(phones.join(", ")).then(() => out("Phone list copied — paste into your texting app.", true)).catch(() => out("Copy failed."));
+  };
+  d.querySelector("#promoSend").onclick = async () => {
+    const subj = d.querySelector("#promoSubj").value.trim(), msg = d.querySelector("#promoMsg").value.trim();
+    if (!subj || !msg) return out("Add a subject and message.");
+    out("Sending…"); let sent = 0;
+    for (const c of custs.filter(x => x.email)) {
+      try { await window.emailjs.send(ej.serviceId, ej.templateId, { to_email: c.email, to_name: c.name || "", subject: subj, message: msg }, { publicKey: ej.publicKey }); sent++; }
+      catch (e) { /* continue */ }
+    }
+    out(`Sent to ${sent} of ${emails.length}.`, true);
+  };
 }
 
 async function saveMeta() { await setDoc(siteRef, content, { merge: false }); }
@@ -634,8 +748,24 @@ function injectOwnerStyles() {
   .crmeter span{display:block;height:100%;background:linear-gradient(90deg,#2E86F2,#E5362E)}
   .crbtn{background:#222833;color:#dce4ee;border:1px solid #333c48;border-radius:6px;padding:9px 14px;font-size:.85rem;cursor:pointer;margin-top:8px}
   .crbtn-primary{background:var(--accent,#E5362E);border-color:var(--accent,#E5362E);color:#fff;width:100%;margin-top:16px;padding:12px}
-  .bk-card{background:#0f1114;border:1px solid #262b33;border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:.85rem}
+  .bk-card{background:#0f1114;border:1px solid #262b33;border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:.85rem;position:relative}
   .bk-card b{color:#8fa1b5;font-weight:600}
+  .bk-badge{position:absolute;top:12px;right:12px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:20px}
+  .bk-new{background:#3a2f12;color:#f5c451}.bk-confirmed{background:#12331f;color:#7fd47f}.bk-done{background:#22262c;color:#8fa1b5}
+  .bk-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .bk-acts .crbtn{margin-top:0;padding:6px 10px;font-size:.78rem}
+  .crbtn-danger{background:#3a1618;border-color:#5a2327;color:#f0a}
+  .cust-sum{color:#aeb8c4;font-size:.82rem;margin-bottom:10px}
+  .cust-card{background:#0f1114;border:1px solid #262b33;border-radius:8px;padding:11px 13px;margin:10px 0 0;font-size:.85rem}
+  .cust-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .cust-head b{font-size:.95rem}
+  .cust-tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:20px;background:#22262c;color:#8fa1b5;white-space:nowrap}
+  .cust-tag.repeat{background:#12331f;color:#7fd47f}
+  .cust-meta{color:#8fa1b5;font-size:.78rem;margin-top:5px;word-break:break-word}
+  .trk-row{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid #232830;font-size:.9rem}
+  .trk-row b{color:#8fa1b5;font-weight:600}.trk-row span{text-align:right}
+  .trk-status{margin:2px 0 14px;padding:10px 12px;border-radius:8px;font-weight:600;text-align:center}
+  .trk-new{background:#3a2f12;color:#f5c451}.trk-confirmed{background:#12331f;color:#7fd47f}.trk-done{background:#22262c;color:#8fa1b5}
   `;
   document.head.appendChild(s);
 }
