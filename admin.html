@@ -256,7 +256,7 @@ $("#pSend").onclick=async()=>{
   if(!subj||!msg){$("#pOut").textContent="Add a subject and message.";return;}
   $("#pOut").style.color="var(--muted)";$("#pOut").textContent="Sending…";
   let sent=0; const custs=customersFromBookings().filter(c=>c.email);
-  for(const c of custs){ try{ await window.emailjs.send(ej.serviceId,ej.templateId,{to_email:c.email,to_name:c.name||"",subject:subj,message:msg},{publicKey:ej.publicKey}); sent++; }catch(e){} }
+  for(const c of custs){ try{ await window.emailjs.send(ej.serviceId,ej.templateId,{to_email:c.email,name:c.name||"",email:"",title:subj,message:msg},{publicKey:ej.publicKey}); sent++; }catch(e){} }
   $("#pOut").style.color="var(--ok)";$("#pOut").textContent=`Sent to ${sent} of ${custs.length}.`;
 };
 

@@ -297,8 +297,18 @@ export async function submitBooking(payload) {
   const ej = content?.booking?.emailjs;
   if (ej && ej.serviceId && ej.templateId && ej.publicKey && window.emailjs) {
     try {
+      const title = "New booking — " + (payload.name || "");
+      const message = [
+        (payload.name || "") + (payload.phone ? " · " + payload.phone : ""),
+        payload.email ? "Email: " + payload.email : "",
+        (payload.package || "") + (payload.vehicle ? " · " + payload.vehicle : "") + (payload.estimate ? " — " + payload.estimate : ""),
+        payload.addons ? "Add-ons: " + payload.addons : "",
+        payload.date ? "Date: " + payload.date + " " + (payload.time || "") : (payload.time ? "Time: " + payload.time : ""),
+        payload.address ? "Where: " + payload.address : ""
+      ].filter(Boolean).join("\n");
       await window.emailjs.send(ej.serviceId, ej.templateId,
-        { to_email: content.booking.notifyEmail, ...payload }, { publicKey: ej.publicKey });
+        { to_email: content.booking.notifyEmail, name: payload.name || "", email: payload.email || "", title: title, message: message },
+        { publicKey: ej.publicKey });
     } catch (e) { console.warn("EmailJS failed:", e); }
   }
   return id;
