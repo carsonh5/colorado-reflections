@@ -29,7 +29,25 @@ a{color:inherit}
 .msg{min-height:1.1em;font-size:.85rem;margin:4px 0 0}
 /* shell */
 #app{display:none;min-height:100vh;grid-template-columns:230px 1fr}
-@media(max-width:760px){#app{grid-template-columns:1fr}#side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%);transition:transform .2s;z-index:40;box-shadow:8px 0 40px rgba(0,0,0,.6)}#app.nav-open #side{transform:none}#menuBtn{display:inline-flex!important}}
+#mEdit{display:none}
+#tabbar{display:none}
+@media(max-width:760px){
+  #app{grid-template-columns:1fr}
+  #side{display:none}
+  #menuBtn{display:none}
+  main{padding:16px 14px 92px;max-width:100%}
+  .topbar{margin-bottom:16px}
+  .topbar h2{font-size:1.2rem}
+  #whoami{display:none}
+  #mEdit{display:inline-flex!important}
+  .cards{grid-template-columns:1fr 1fr}
+  .grid2{grid-template-columns:1fr}
+  #tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--panel);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  #tabbar a{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;color:var(--muted);font-size:.64rem;text-decoration:none;border-radius:9px;font-weight:600}
+  #tabbar a.active{color:#fff;background:var(--panel2)}
+  #tabbar a .ic{font-size:1.15rem;line-height:1}
+  #tabbar a.has::after{content:"";position:absolute;top:5px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--accent)}
+}
 #side{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;width:230px}
 .brand{font-weight:800;font-size:1.05rem;letter-spacing:-.01em;padding:6px 10px 16px}
 .brand small{display:block;color:var(--muted);font-weight:500;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
@@ -102,14 +120,13 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
 
   <main>
     <div class="topbar">
-      <button class="btn" id="menuBtn">☰</button>
       <h2 id="viewTitle">Overview</h2>
-      <div class="right"><span class="hint" id="whoami"></span></div>
+      <div class="right"><span class="hint" id="whoami"></span><a class="btn btn-primary" id="mEdit" href="./index.html?edit=1">✎ Edit site</a></div>
     </div>
 
     <section class="view on" id="v-overview">
       <div class="card" style="margin-bottom:16px;border-left:3px solid var(--accent)">
-        <b>Welcome, James.</b> <span class="hint">Tap <b>Edit site</b> (bottom-left) to change your text, prices &amp; photos right on your live site. New requests show under <b>Bookings</b> — you get an email too. Your prices are placeholders for now; set your real ones via Edit site.</span>
+        <b>Welcome, James.</b> <span class="hint">Tap <b>Edit site</b> to change your text, prices &amp; photos right on your live site. New requests show under <b>Bookings</b> — you get an email too. Your prices are placeholders for now; set your real ones in Edit site.</span>
       </div>
       <div class="cards" id="statCards"></div>
       <div class="panel" id="recentBookings"></div>
@@ -131,6 +148,14 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
     </section>
 
     <section class="view" id="v-settings"><div class="grid2" id="settingsGrid"></div></section>
+
+    <nav id="tabbar">
+      <a data-view="overview" class="active"><span class="ic">🏠</span>Home</a>
+      <a data-view="bookings"><span class="ic">🗓️</span>Bookings</a>
+      <a data-view="customers"><span class="ic">👤</span>Customers</a>
+      <a data-view="promos"><span class="ic">✉️</span>Promos</a>
+      <a data-view="settings"><span class="ic">⚙️</span>Settings</a>
+    </nav>
   </main>
 </div>
 
@@ -171,20 +196,19 @@ async function loadAll(){
   try { const snap=await getDocs(query(collection(db,"sites",SITE_ID,"bookings"),orderBy("created","desc"))); bookings=[]; snap.forEach(d=>bookings.push({id:d.id,...d.data()})); } catch(e){ bookings=[]; }
   renderOverview(); renderBookings(); renderCustomers(); renderSettings(); renderPromoMeta();
   const newCount = bookings.filter(b=>(b.status||"new")==="new").length;
-  document.querySelector('[data-view="bookings"]').classList.toggle("has", newCount>0);
+  document.querySelectorAll('[data-view="bookings"]').forEach(el=>el.classList.toggle("has", newCount>0));
 }
 
-/* ---- nav ---- */
-document.querySelectorAll(".navlink").forEach(n => n.onclick = () => {
-  document.querySelectorAll(".navlink").forEach(x=>x.classList.remove("active"));
-  n.classList.add("active");
-  const v=n.dataset.view;
+/* ---- nav (sidebar + mobile bottom tab bar, kept in sync) ---- */
+const TITLES={overview:"Overview",bookings:"Bookings",customers:"Customers",promos:"Promos",settings:"Settings"};
+function showView(v){
+  document.querySelectorAll(".navlink, #tabbar a").forEach(x=>x.classList.toggle("active", x.dataset.view===v));
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
   $("#v-"+v).classList.add("on");
-  $("#viewTitle").textContent = n.textContent.trim().replace("●","");
-  $("#app").classList.remove("nav-open");
-});
-$("#menuBtn").onclick = () => $("#app").classList.toggle("nav-open");
+  $("#viewTitle").textContent = TITLES[v]||v;
+  window.scrollTo(0,0);
+}
+document.querySelectorAll(".navlink, #tabbar a").forEach(n => n.addEventListener("click", (e)=>{ e.preventDefault(); showView(n.dataset.view); }));
 
 /* ---- overview ---- */
 function customersFromBookings(){
