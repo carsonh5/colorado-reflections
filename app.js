@@ -375,11 +375,13 @@ function slotIsBlocked(dateStr, slot) {
 window.__CR_bookingAvail = function (dateStr) {
   const a = availCfg();
   const st = dayStatus(dateStr);
-  return {
-    open: st.open,
-    reason: st.reason,
-    slots: a.slots.map(s => ({ label: s, available: st.open && !slotIsBlocked(dateStr, s) }))
-  };
+  const slots = a.slots.map(s => ({ label: s, available: st.open && !slotIsBlocked(dateStr, s) }));
+  let open = st.open, reason = st.reason;
+  // if the day is technically open but every slot is taken, treat it as fully booked
+  if (open && dateStr && slots.length && slots.every(s => !s.available)) {
+    open = false; reason = "That day's fully booked — please pick another.";
+  }
+  return { open, reason, slots };
 };
 window.__CR_dateLimits = dateLimits;
 
