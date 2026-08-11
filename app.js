@@ -185,6 +185,7 @@ function hydrate() {
   renderCities();
   applySectionVisibility();
   renderSocial();
+  tagStaticText();
   window.__CR_recomputeQuote && window.__CR_recomputeQuote();
 }
 
@@ -193,15 +194,15 @@ function renderPackages() {
   const wrap = document.querySelector("#pkgTiers");
   const strip = document.querySelector("#pkgCompare");
   if (wrap) {
-    wrap.innerHTML = content.packages.map(p => `
-      <label class="tier${p.featured ? " tier-feature" : ""}" data-pkg="${p.id}">
+    wrap.innerHTML = content.packages.map((p, pi) => `
+      <label class="tier cr-removable${p.featured ? " tier-feature" : ""}" data-pkg="${p.id}" data-remove="packages.${pi}">
         <input type="radio" name="pkg" value="${p.id}" data-base="${p.price}" />
         ${p.tag ? `<span class="tier-tag">${esc(p.tag)}</span>` : ""}
         <span class="tier-head">
-          <span class="tier-name" data-edit="pkg.${p.id}.name">${esc(p.name)}</span>
-          <span class="tier-price">from <b>$<span data-edit="pkg.${p.id}.price">${p.price}</span></b></span>
+          <span class="tier-name" data-edit="packages.${pi}.name">${esc(p.name)}</span>
+          <span class="tier-price">from <b>$<span data-edit="packages.${pi}.price">${p.price}</span></b></span>
         </span>
-        <span class="tier-list">${p.list.map((li, i) => `<span data-edit="pkg.${p.id}.list.${i}">${esc(li)}</span>`).join("")}</span>
+        <span class="tier-list">${p.list.map((li, i) => `<span data-edit="packages.${pi}.list.${i}">${esc(li)}</span>`).join("")}</span>
       </label>`).join("");
   }
   if (strip) {
@@ -222,15 +223,15 @@ function renderVehicles() {
 function renderAddons() {
   const ex = document.querySelector("#addonList");
   if (!ex) return;
-  ex.innerHTML = content.addons.map(a => `
-    <label class="ex"><input type="checkbox" name="ex" data-key="${a.id}" data-add="${a.add}" />
-      <span><span data-edit="addon.${a.id}.label">${esc(a.label)}</span> <b data-price="+$${a.add}">+$${a.add}</b></span></label>`).join("");
+  ex.innerHTML = content.addons.map((a, ai) => `
+    <label class="ex cr-removable" data-remove="addons.${ai}"><input type="checkbox" name="ex" data-key="${a.id}" data-add="${a.add}" />
+      <span><span data-edit="addons.${ai}.label">${esc(a.label)}</span> <b data-price="+$${a.add}" data-edit="addons.${ai}.add">+$${a.add}</b></span></label>`).join("");
 }
 function renderGallery() {
   const g = document.querySelector("#workGrid");
   if (!g) return;
   g.innerHTML = content.gallery.map((ph, i) => `
-    <figure data-gindex="${i}"><img src="${esc(ph.src)}" alt="${esc(ph.cap || "")}" />
+    <figure class="cr-removable" data-gindex="${i}" data-remove="gallery.${i}"><img src="${esc(ph.src)}" alt="${esc(ph.cap || "")}" />
       <figcaption data-edit="gallery.${i}.cap">${esc(ph.cap || "")}</figcaption></figure>`).join("");
   window.__CR_bindLightbox && window.__CR_bindLightbox();
 }
@@ -243,13 +244,13 @@ function renderReviews() {
   const r = document.querySelector("#reviewList");
   if (!r) return;
   r.innerHTML = content.reviews.map((rv, i) => `
-    <blockquote class="rev-card"><p data-edit="review.${i}.text">${esc(rv.text)}</p>
-      <footer>— <span data-edit="review.${i}.name">${esc(rv.name)}</span>${rv.source ? ` · ${esc(rv.source)}` : ""}</footer></blockquote>`).join("");
+    <blockquote class="rev-card cr-removable" data-remove="reviews.${i}"><p data-edit="reviews.${i}.text">${esc(rv.text)}</p>
+      <footer>— <span data-edit="reviews.${i}.name">${esc(rv.name)}</span>${rv.source ? ` · ${esc(rv.source)}` : ""}</footer></blockquote>`).join("");
 }
 function renderCities() {
   const ul = document.querySelector("#areaCities");
   if (!ul) return;
-  ul.innerHTML = content.area.cities.map((c, i) => `<li data-edit="area.cities.${i}">${esc(c)}</li>`).join("");
+  ul.innerHTML = content.area.cities.map((c, i) => `<li class="cr-removable" data-remove="area.cities.${i}" data-edit="area.cities.${i}">${esc(c)}</li>`).join("");
 }
 function safeUrl(u) {
   try { const x = new URL(u, location.href); return (x.protocol === "https:" || x.protocol === "http:") ? x.href : ""; }
@@ -435,15 +436,68 @@ function openLogin() {
 function toggleEdit() {
   editMode = !editMode;
   document.body.classList.toggle("cr-editing", editMode);
-  document.querySelectorAll("[data-edit]").forEach(el => {
+  document.querySelectorAll("[data-edit],[data-ekey]").forEach(el => {
     el.contentEditable = editMode ? "true" : "false";
     if (editMode) el.addEventListener("input", markDirty); else el.removeEventListener("input", markDirty);
   });
-  if (editMode) enableStructuralControls(); else disableStructuralControls();
-  // photos become clickable to replace
+  if (editMode) { enableStructuralControls(); decorateRemovers(); showEditHint(); }
+  else { disableStructuralControls(); removeRemovers(); hideEditHint(); }
   document.querySelectorAll("#workGrid figure img, [data-field='hero.photo']").forEach(img => {
     img.style.cursor = editMode ? "pointer" : "";
     img.onclick = editMode ? () => replacePhoto(img) : null;
+  });
+}
+
+/* ---- remove (×) buttons on repeatable items ---- */
+function decorateRemovers() {
+  document.querySelectorAll("[data-remove]").forEach(item => {
+    if (item.querySelector(":scope > .cr-remove")) return;
+    const btn = document.createElement("button");
+    btn.className = "cr-remove"; btn.type = "button"; btn.textContent = "×"; btn.title = "Remove";
+    btn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); removeItem(item.dataset.remove); };
+    item.appendChild(btn);
+  });
+}
+function removeRemovers() { document.querySelectorAll(".cr-remove").forEach(b => b.remove()); }
+function removeItem(path) {
+  const parts = path.split("."); const idx = +parts.pop();
+  let arr = content; parts.forEach(k => { arr = arr ? arr[k] : arr; });
+  if (Array.isArray(arr) && idx >= 0) arr.splice(idx, 1);
+  markDirty();
+  if (path.startsWith("packages")) renderPackages();
+  else if (path.startsWith("addons")) renderAddons();
+  else if (path.startsWith("gallery")) renderGallery();
+  else if (path.startsWith("reviews")) renderReviews();
+  else if (path.startsWith("area.cities")) renderCities();
+  reEnter();
+}
+
+/* ---- edit hint banner ---- */
+function showEditHint() {
+  if (document.getElementById("crEditHint")) return;
+  const h = document.createElement("div"); h.id = "crEditHint"; h.className = "cr-edit-hint";
+  h.textContent = "Tap any text, price or photo to change it";
+  document.body.appendChild(h);
+  setTimeout(() => { h.style.transition = "opacity .5s"; h.style.opacity = "0"; setTimeout(() => h.remove(), 600); }, 3500);
+}
+function hideEditHint() { const h = document.getElementById("crEditHint"); if (h) h.remove(); }
+
+/* ---- make every static text element editable (keyed overrides) ---- */
+function tagStaticText() {
+  content.textOverrides = content.textOverrides || {};
+  const dyn = ["pkgTiers", "pkgCompare", "addonList", "vehSeg", "workGrid", "reviewList", "areaCities", "socialLinks", "crOwnerBar", "crDrawer", "est", "estNote", "priceLive", "sumLines", "bkSummary", "bkDoneNote", "confirmBody", "thumbs", "map", "igFeedMount"];
+  const inDyn = (el) => { let n = el; while (n) { if (n.id && dyn.includes(n.id)) return true; n = n.parentElement; } return false; };
+  const sel = "h1,h2,h3,h4,p,li,cite,em,.over,.build-label,.est-label,.est-fine,.price-note,.foot-h";
+  let n = 0;
+  document.querySelectorAll(sel).forEach(el => {
+    if (el.hasAttribute("data-field") || el.hasAttribute("data-edit") || el.hasAttribute("data-ekey")) return;
+    if (el.closest("[data-field],[data-edit]")) return;
+    if (inDyn(el)) return;
+    const hasDirectText = [...el.childNodes].some(c => c.nodeType === 3 && c.textContent.trim());
+    if (!hasDirectText) return;
+    const key = "e" + (n++);
+    el.setAttribute("data-ekey", key);
+    if (content.textOverrides[key] != null) el.textContent = content.textOverrides[key];
   });
 }
 function markDirty() { dirty = true; }
@@ -458,8 +512,9 @@ function enableStructuralControls() {
 }
 function reEnter() { // re-apply edit affordances after a re-render
   if (!editMode) return;
-  document.querySelectorAll("[data-edit]").forEach(el => { el.contentEditable = "true"; el.addEventListener("input", markDirty); });
+  document.querySelectorAll("[data-edit],[data-ekey]").forEach(el => { el.contentEditable = "true"; el.addEventListener("input", markDirty); });
   enableStructuralControls();
+  decorateRemovers();
   markDirty();
 }
 function addAdder(sel, label, fn) {
@@ -512,6 +567,8 @@ function collectEdits() {
     const val = el.textContent.trim();
     setByPath(content, path, val);
   });
+  content.textOverrides = content.textOverrides || {};
+  document.querySelectorAll("[data-ekey]").forEach(el => { content.textOverrides[el.dataset.ekey] = el.textContent.trim(); });
   // simple [data-field] text fields (hero, story, etc.) mirror to content too
   const fieldMap = {
     "hero.headline": ["hero", "headline"], "hero.em": ["hero", "em"], "hero.sub": ["hero", "sub"], "hero.mark": ["hero", "mark"],
@@ -545,7 +602,7 @@ async function saveContent() {
   try {
     await setDoc(siteRef, content, { merge: false });
     dirty = false;
-    btn.textContent = "Saved ✓";
+    btn.textContent = "Saved";
     setTimeout(() => { btn.textContent = "Save"; btn.disabled = false; }, 1500);
     window.__CR_recomputeQuote && window.__CR_recomputeQuote();
   } catch (e) {
@@ -763,8 +820,15 @@ function injectOwnerStyles() {
   #crOwnerTools[hidden]{display:none}
   #crWho{color:#9aa;font-size:12px;margin-right:4px}
   #crSaveBtn{background:var(--accent,#E5362E)!important;border-color:var(--accent,#E5362E)!important}
-  body.cr-editing [data-edit]{outline:1px dashed rgba(46,134,242,.7);outline-offset:2px;cursor:text;min-width:12px;display:inline-block}
-  body.cr-editing [data-edit]:focus{outline:2px solid #2E86F2;background:rgba(46,134,242,.08)}
+  html,body{overflow-x:hidden;max-width:100%}
+  body.cr-editing [data-edit],body.cr-editing [data-ekey]{outline:1px dashed rgba(46,134,242,.7);outline-offset:2px;cursor:text;min-height:1em}
+  body.cr-editing [data-edit]:focus,body.cr-editing [data-ekey]:focus{outline:2px solid #2E86F2;background:rgba(46,134,242,.08)}
+  body.cr-editing .mobile-bar{display:none}
+  .cr-remove{position:absolute;top:-8px;right:-8px;z-index:5;width:22px;height:22px;border-radius:50%;background:#E5362E;color:#fff;border:2px solid #0c0d10;font:700 13px/1 system-ui;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  body.cr-editing .cr-removable{position:relative}
+  .cr-edit-hint{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9998;background:#2E86F2;color:#fff;padding:8px 16px;border-radius:20px;font:600 13px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  body.cr-editing a:not([data-edit]):not([data-ekey]):not(.cr-remove):not(.cr-adder),body.cr-editing button:not(.cr-remove):not(.cr-adder):not(#crSaveBtn):not(#crDone){pointer-events:none}
+  body.cr-editing [data-edit],body.cr-editing [data-ekey],body.cr-editing #workGrid img,body.cr-editing [data-field="hero.photo"],body.cr-editing .cr-remove,body.cr-editing .cr-adder{pointer-events:auto}
   .cr-adder{display:inline-block;margin:10px auto;background:#123;color:#8cf;border:1px dashed #2E86F2;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}
   #crDrawer{position:fixed;inset:0;z-index:10000;font-family:system-ui,sans-serif}
   #crDrawer .crd-scrim{position:absolute;inset:0;background:rgba(0,0,0,.55)}

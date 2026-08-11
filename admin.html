@@ -22,6 +22,7 @@ a{color:inherit}
 .fld input,.fld textarea,.fld select{display:block;width:100%;margin-top:5px;padding:11px 12px;background:#0f1114;border:1px solid var(--line);border-radius:8px;color:#fff;font-size:.95rem;font-family:inherit}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 15px;font-size:.88rem;cursor:pointer;font-family:inherit}
 .btn:hover{border-color:#39414c}
+.btn svg{width:15px;height:15px;flex:none}
 .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .btn-primary:hover{filter:brightness(1.08)}
 .btn-danger{background:#3a1618;border-color:#5a2327;color:#ff9aa2}
@@ -30,6 +31,7 @@ a{color:inherit}
 /* shell */
 #app{display:none;min-height:100vh;grid-template-columns:230px 1fr}
 #mEdit{display:none}
+#mView{display:none}
 #tabbar{display:none}
 #side{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;width:230px}
 .brand{font-weight:800;font-size:1.05rem;letter-spacing:-.01em;padding:6px 10px 16px}
@@ -78,12 +80,14 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
   .topbar h2{font-size:1.2rem}
   #whoami{display:none!important}
   #mEdit{display:inline-flex!important}
+  #mView{display:inline-flex!important;padding:9px 11px}
   .cards{grid-template-columns:1fr 1fr!important}
   .grid2{grid-template-columns:1fr!important}
   #tabbar{display:flex!important;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--panel);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
   #tabbar a{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;color:var(--muted);font-size:.64rem;text-decoration:none;border-radius:9px;font-weight:600}
   #tabbar a.active{color:#fff;background:var(--panel2)}
-  #tabbar a .ic{font-size:1.15rem;line-height:1}
+  #tabbar a .ic{line-height:1}
+  #tabbar a .ic svg{width:22px;height:22px;display:block}
   #tabbar a.has::after{content:"";position:absolute;top:5px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--accent)}
 }
 </style>
@@ -113,8 +117,8 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
     <div class="navlink" data-view="promos">Promos</div>
     <div class="navlink" data-view="settings">Settings</div>
     <div class="side-foot">
-      <a class="btn" href="./index.html?edit=1">✎ Edit site</a>
-      <a class="btn" href="./index.html" target="_blank">↗ View site</a>
+      <a class="btn" href="./index.html?edit=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit site</a>
+      <a class="btn" href="./index.html" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg> View site</a>
       <button class="btn" id="signout">Sign out</button>
     </div>
   </aside>
@@ -122,12 +126,12 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
   <main>
     <div class="topbar">
       <h2 id="viewTitle">Overview</h2>
-      <div class="right"><span class="hint" id="whoami"></span><a class="btn btn-primary" id="mEdit" href="./index.html?edit=1">✎ Edit site</a></div>
+      <div class="right"><span class="hint" id="whoami"></span><a class="btn" id="mView" href="./index.html" target="_blank" title="View live site"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a><a class="btn btn-primary" id="mEdit" href="./index.html?edit=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit site</a></div>
     </div>
 
     <section class="view on" id="v-overview">
       <div class="card" style="margin-bottom:16px;border-left:3px solid var(--accent)">
-        <b>Welcome, James.</b> <span class="hint">Tap <b>Edit site</b> to change your text, prices &amp; photos right on your live site. New requests show under <b>Bookings</b> — you get an email too. Your prices are placeholders for now; set your real ones in Edit site.</span>
+        <b id="adminGreet">Welcome.</b> <span class="hint">Tap <b>Edit site</b> to change your text, prices &amp; photos right on your live site. New requests show under <b>Bookings</b> — you get an email too. Set your real prices in Edit site.</span>
       </div>
       <div class="cards" id="statCards"></div>
       <div class="panel" id="recentBookings"></div>
@@ -151,11 +155,11 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
     <section class="view" id="v-settings"><div class="grid2" id="settingsGrid"></div></section>
 
     <nav id="tabbar">
-      <a data-view="overview" class="active"><span class="ic">🏠</span>Home</a>
-      <a data-view="bookings"><span class="ic">🗓️</span>Bookings</a>
-      <a data-view="customers"><span class="ic">👤</span>Customers</a>
-      <a data-view="promos"><span class="ic">✉️</span>Promos</a>
-      <a data-view="settings"><span class="ic">⚙️</span>Settings</a>
+      <a data-view="overview" class="active"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg></span>Home</a>
+      <a data-view="bookings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18"/></svg></span>Bookings</a>
+      <a data-view="customers"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5.5a3 3 0 0 1 0 5.8"/><path d="M21 20a6 6 0 0 0-4-5"/></svg></span>Customers</a>
+      <a data-view="promos"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>Promos</a>
+      <a data-view="settings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
     </nav>
   </main>
 </div>
@@ -218,6 +222,8 @@ function customersFromBookings(){
   return Object.values(map).map(c=>{ c.total=c.visits.reduce((s,v)=>s+priceNum(v.estimate),0); c.email=c.email||c.visits.map(v=>v.email).find(Boolean)||""; c.count=c.visits.length; return c; }).sort((a,b)=>b.count-a.count);
 }
 function renderOverview(){
+  const g=document.getElementById("adminGreet");
+  if(g) g.textContent = (content.business && content.business.owner) ? ("Welcome, "+content.business.owner+".") : "Welcome back.";
   const custs=customersFromBookings();
   const revenue=bookings.reduce((s,b)=>s+priceNum(b.estimate),0);
   const stats=[["New bookings",bookings.filter(b=>(b.status||"new")==="new").length],["Total bookings",bookings.length],["Customers",custs.length],["Repeat",custs.filter(c=>c.count>1).length],["Est. pipeline",money(revenue)]];
@@ -308,10 +314,9 @@ function renderSettings(){
     <div class="card"><h3>Sections shown</h3>
       ${["pricing","work","story","reviews","area","igfeed"].map(k=>`<div class="togg"><span>${k}</span><input data-sec="${k}" type="checkbox"></div>`).join("")}
     </div>
-    <div class="card"><h3>Email sending (EmailJS)</h3><p class="hint">Configured ✓ — booking emails &amp; promos are on. (Advanced — leave as-is unless changing providers.)</p>
-      <label class="fld">Service ID <input id="ejService"></label>
-      <label class="fld">Template ID <input id="ejTemplate"></label>
-      <label class="fld">Public key <input id="ejKey"></label>
+    <div class="card"><h3>Email notifications</h3>
+      <p class="hint" id="ejStatus"></p>
+      <p class="hint">Booking and promo emails are set up and running. To change where alerts land, edit <b>Booking notifications go to</b> under Operations above. Nothing else to manage here.</p>
     </div>
     <div class="card"><h3>Storage</h3><div class="meter"><span style="width:${pct}%"></span></div>
       <p class="hint">${kb} KB of 1024 KB used (photos live here).</p></div>
@@ -322,16 +327,16 @@ function renderSettings(){
   const set=(id,v)=>{const e=$("#"+id); if(e)e.value=v||"";};
   set("sIg",s.ig);set("sFb",s.fb);set("sYelp",s.yelp);set("sNd",s.nextdoor);$("#sIgFeed").checked=!!s.igFeedOn;
   set("sHours",content.hours);set("sNotify",b.notifyEmail);$("#sAccent").value=(content.brand&&content.brand.accent)||"#E5362E";
-  set("ejService",(b.emailjs||{}).serviceId);set("ejTemplate",(b.emailjs||{}).templateId);set("ejKey",(b.emailjs||{}).publicKey);
+  { const ej=b.emailjs||{}, ok=!!(ej.serviceId&&ej.templateId&&ej.publicKey), es=$("#ejStatus");
+    if(es){ es.innerHTML = ok ? "<b style='color:var(--ok)'>On</b> — booking &amp; promo emails are active." : "<b style='color:var(--accent)'>Off</b> — contact us to switch email on."; } }
   document.querySelectorAll("[data-sec]").forEach(cb=>cb.checked=!!sec[cb.dataset.sec]);
   $("#sPw").onclick=()=>sendPasswordResetEmail(auth,user.email).then(()=>alert("Reset link sent to "+user.email)).catch(e=>alert("Failed: "+e.code));
   $("#sSave").onclick=async()=>{
     s.ig=$("#sIg").value.trim();s.fb=$("#sFb").value.trim();s.yelp=$("#sYelp").value.trim();s.nextdoor=$("#sNd").value.trim();s.igFeedOn=$("#sIgFeed").checked;
     content.hours=$("#sHours").value.trim(); b.notifyEmail=$("#sNotify").value.trim(); (content.brand=content.brand||{}).accent=$("#sAccent").value;
-    b.emailjs={serviceId:$("#ejService").value.trim(),templateId:$("#ejTemplate").value.trim(),publicKey:$("#ejKey").value.trim()};
     document.querySelectorAll("[data-sec]").forEach(cb=>sec[cb.dataset.sec]=cb.checked);
     $("#sMsg").textContent="Saving…";
-    try{ await setDoc(siteRef,content,{merge:true}); $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved ✓"; renderPromoMeta(); }
+    try{ await setDoc(siteRef,content,{merge:true}); $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); }
     catch(e){ $("#sMsg").style.color="var(--accent)";$("#sMsg").textContent="Save failed: "+(e.code||e.message); }
   };
 }
