@@ -91,7 +91,7 @@ const DEFAULT_CONTENT = {
     cities: ["Thornton", "Northglenn", "Westminster", "Broomfield", "Arvada", "Denver"]
   },
   hours: "Mon–Fri 9:00a–7:30p · Sat 10:00a–7:30p · Sun 11:00a–7:30p · By appointment.",
-  social: { ig: "", fb: "", yelp: "https://www.yelp.com/biz/colorado-reflections-mobile-detail-denver", nextdoor: "", igFeedOn: false },
+  social: { ig: "Colorado_reflections_detail", fb: "", yelp: "https://www.yelp.com/biz/colorado-reflections-mobile-detail-denver", nextdoor: "", igFeedOn: false },
   booking: { notifyEmail: "corefmobiledetail@gmail.com", photoUploadOn: true, emailjs: { serviceId: "", templateId: "", publicKey: "" } },
   sections: { pricing: true, work: true, story: true, reviews: true, area: true, igfeed: false },
   seo: {
@@ -320,6 +320,8 @@ function mountOwnerBar() {
     </div>`;
   document.body.appendChild(bar);
   injectOwnerStyles();
+  // Owner controls are private: only appear via a ?admin URL (or when already signed in).
+  bar.style.display = /(?:[?&#])(?:admin|edit)/i.test(location.search + location.hash) ? "block" : "none";
 
   document.getElementById("crLoginBtn").onclick = openLogin;
   document.getElementById("crEditToggle").onclick = toggleEdit;
@@ -328,15 +330,17 @@ function mountOwnerBar() {
   document.getElementById("crBookingsBtn").onclick = openBookings;
   document.getElementById("crLogout").onclick = () => signOut(auth);
 
+  const adminMode = /(?:[?&#])(?:admin|edit)/i.test(location.search + location.hash);
   onAuthStateChanged(auth, (user) => {
     currentUser = user && OWNERS.includes(user.email) ? user : null;
     const tools = document.getElementById("crOwnerTools");
     const loginBtn = document.getElementById("crLoginBtn");
     if (currentUser) {
-      tools.hidden = false; loginBtn.hidden = true;
+      tools.hidden = false; loginBtn.hidden = true; bar.style.display = "block";
       document.getElementById("crWho").textContent = currentUser.email.split("@")[0];
     } else {
-      tools.hidden = true; loginBtn.hidden = false;
+      tools.hidden = true; loginBtn.hidden = !adminMode;
+      bar.style.display = adminMode ? "block" : "none";   // public sees nothing
       if (editMode) toggleEdit();
     }
   });
@@ -597,7 +601,8 @@ function injectOwnerStyles() {
   #crOwnerBar{position:fixed;left:16px;bottom:16px;z-index:9999;font-family:system-ui,sans-serif}
   #crOwnerBar button{background:#111;color:#fff;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:13px;cursor:pointer;margin-right:6px}
   #crOwnerBar button:hover{background:#222}
-  #crOwnerTools{display:flex;align-items:center;gap:6px;background:rgba(10,10,12,.92);padding:8px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  #crOwnerTools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:rgba(10,10,12,.92);padding:8px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:calc(100vw - 32px)}
+  #crOwnerTools[hidden]{display:none}
   #crWho{color:#9aa;font-size:12px;margin-right:4px}
   #crSaveBtn{background:var(--accent,#E5362E)!important;border-color:var(--accent,#E5362E)!important}
   body.cr-editing [data-edit]{outline:1px dashed rgba(46,134,242,.7);outline-offset:2px;cursor:text;min-width:12px;display:inline-block}
