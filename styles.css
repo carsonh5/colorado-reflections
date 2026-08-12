@@ -81,9 +81,10 @@ h1,h2{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:
 .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .seg label{cursor:pointer;min-width:0}
 .seg input{position:absolute;opacity:0;width:0;height:0}
-.seg span{display:flex;align-items:center;justify-content:center;height:48px;border:1px solid var(--line-2);border-radius:2px;font-family:var(--mono);font-weight:500;font-size:.82rem;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-2);background:var(--surface-2);transition:border-color .16s ease,background-color .16s ease,color .16s ease}
-.seg label:hover span{border-color:var(--muted);color:var(--ink)}
+.seg label>span{display:flex;align-items:center;justify-content:center;gap:5px;height:48px;border:1px solid var(--line-2);border-radius:2px;font-family:var(--mono);font-weight:500;font-size:.82rem;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-2);background:var(--surface-2);transition:border-color .16s ease,background-color .16s ease,color .16s ease}
+.seg label:hover>span{border-color:var(--muted);color:var(--ink)}
 .seg input:checked + span{background:var(--ink);color:#0C0C0D;border-color:var(--ink)}
+.seg input:checked + span b{color:#0C0C0D}
 .seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
 .extras{display:flex;flex-direction:column;gap:8px}
 .ex{cursor:pointer}
@@ -200,7 +201,7 @@ h1,h2{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:
 .bk-input::placeholder{color:var(--muted)}
 .seg-3{grid-template-columns:repeat(3,1fr)}
 .seg-wrap{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
-.seg span{padding:0 6px;font-size:.76rem;letter-spacing:.01em;line-height:1.12;text-align:center}
+.seg label>span{padding:0 6px;font-size:.76rem;letter-spacing:.01em;line-height:1.12;text-align:center}
 .seg input:disabled + span{opacity:.3;cursor:not-allowed;text-decoration:line-through}
 textarea.bk-input{resize:vertical;min-height:64px;font-family:inherit}
 .bk-file{display:flex;align-items:center;gap:12px;cursor:pointer}
