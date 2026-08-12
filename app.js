@@ -174,11 +174,6 @@ function hydrate() {
   });
   setText("business.phonePlain", c.business.phone);
   document.querySelectorAll('[data-email]').forEach(el => { el.setAttribute("href", "mailto:" + c.business.email); el.textContent = c.business.email; });
-  document.querySelectorAll('[data-field="business.license"]').forEach(el => {
-    const lic = (c.business.license || "").trim();
-    el.textContent = lic ? "Lic. " + lic : "";
-    el.style.display = lic ? "" : "none";
-  });
 
   // hero
   setText("hero.headline", c.hero.headline);
@@ -527,12 +522,23 @@ function toggleEdit() {
   });
   if (editMode) { enableStructuralControls(); decorateRemovers(); showEditHint(); }
   else { disableStructuralControls(); removeRemovers(); hideEditHint(); }
-  document.querySelectorAll("#workGrid figure img, [data-field='hero.photo']").forEach(img => {
+  document.querySelectorAll("#workGrid figure img").forEach(img => {
     img.style.cursor = editMode ? "pointer" : "";
-    const isHero = img.matches("[data-field='hero.photo']");
-    img.onclick = editMode ? () => (isHero ? openHeroEditor() : replacePhoto(img)) : null;
+    img.onclick = editMode ? () => replacePhoto(img) : null;
   });
-  if (!editMode) { const p = document.getElementById("crHeroEd"); if (p) p.remove(); }
+  // hero <img> sits behind the overlay (z-index:-2) so it can't be clicked — give a visible button instead
+  const heroSec = document.querySelector(".hero");
+  let rf = document.getElementById("crReframe");
+  if (editMode && heroSec && !rf) {
+    rf = document.createElement("button"); rf.id = "crReframe"; rf.type = "button";
+    rf.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>Reframe photo`;
+    rf.onclick = openHeroEditor; heroSec.appendChild(rf);
+  } else if (!editMode && rf) { rf.remove(); }
+  // managed fields (edited in the dashboard, not inline): tapping them explains where to change them
+  document.querySelectorAll('[data-field="hours"],[data-phone],[data-email],[data-field="business.name"]').forEach(el => {
+    el.onclick = editMode ? (e) => { e.preventDefault(); showManagedHint(); } : null;
+  });
+  if (!editMode) { const p = document.getElementById("crHeroEd"); if (p) p.remove(); const mh = document.getElementById("crManageHint"); if (mh) mh.remove(); }
 }
 
 /* ---- remove (×) buttons on repeatable items ---- */
@@ -590,6 +596,13 @@ function tagStaticText() {
   });
 }
 function markDirty() { dirty = true; }
+function showManagedHint() {
+  const old = document.getElementById("crManageHint"); if (old) old.remove();
+  const h = document.createElement("div"); h.id = "crManageHint"; h.className = "cr-manage-hint";
+  h.textContent = "Change this in your dashboard → Settings";
+  document.body.appendChild(h);
+  setTimeout(() => { h.style.transition = "opacity .4s"; h.style.opacity = "0"; setTimeout(() => h.remove(), 500); }, 2600);
+}
 function focusLast(sel) {
   const els = document.querySelectorAll(sel); const el = els[els.length - 1];
   if (!el) return;
@@ -975,10 +988,15 @@ function injectOwnerStyles() {
   .cr-remove svg{display:block}
   body.cr-editing #areaCities{gap:18px 16px}
   body.cr-editing #areaCities li{overflow:visible}
+  body.cr-editing #workGrid figure{overflow:visible}
+  #crReframe{position:absolute;top:16px;right:16px;z-index:8;display:inline-flex;align-items:center;gap:7px;background:rgba(12,13,16,.82);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:9px 13px;font:600 13px system-ui;cursor:pointer;backdrop-filter:blur(6px)}
+  #crReframe:hover{background:#2E86F2;border-color:#2E86F2}
+  .cr-manage-hint{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9998;background:#20242b;color:#fff;border:1px solid #3a4048;padding:10px 18px;border-radius:22px;font:600 13px system-ui;box-shadow:0 8px 26px rgba(0,0,0,.5)}
   body.cr-editing .cr-removable{position:relative}
   .cr-edit-hint{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9998;background:#2E86F2;color:#fff;padding:8px 16px;border-radius:20px;font:600 13px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.4)}
   body.cr-editing a:not([data-edit]):not([data-ekey]):not(.cr-remove):not(.cr-adder),body.cr-editing button:not(.cr-remove):not(.cr-adder):not(#crSaveBtn):not(#crDone){pointer-events:none}
-  body.cr-editing [contenteditable="true"],body.cr-editing #workGrid img,body.cr-editing [data-field="hero.photo"],body.cr-editing .cr-remove,body.cr-editing .cr-adder,body.cr-editing #crHeroEd,body.cr-editing #crHeroEd *{pointer-events:auto}
+  body.cr-editing [contenteditable="true"],body.cr-editing #workGrid img,body.cr-editing #crReframe,body.cr-editing .cr-remove,body.cr-editing .cr-adder,body.cr-editing #crHeroEd,body.cr-editing #crHeroEd *{pointer-events:auto}
+  body.cr-editing [data-field="hours"],body.cr-editing [data-phone],body.cr-editing [data-email],body.cr-editing [data-field="business.name"]{pointer-events:auto!important;cursor:help}
   .cr-adder{display:inline-flex;align-items:center;gap:6px;margin:10px auto;background:#123;color:#8cf;border:1px dashed #2E86F2;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}
   .cr-adder svg{flex:none}
   #crDrawer{position:fixed;inset:0;z-index:10000;font-family:system-ui,sans-serif}
