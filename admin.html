@@ -271,8 +271,10 @@ function rowBooking(b){
     <div>${esc(b.package||"")}${b.vehicle?" · "+esc(b.vehicle):""}<div class="sub">${esc(b.estimate||"")}</div></div>
     <div>${esc(b.date||"—")}<div class="sub">${esc(b.time||"")}</div></div>
     <div class="acts"><span class="badge b-${st}">${st}</span>
+      ${b.phone?'<button class="btn" data-act="sms">Text</button>':''}
       ${st==="new"?'<button class="btn" data-act="confirm">Confirm</button>':''}
       ${st!=="done"?'<button class="btn" data-act="done">Done</button>':''}
+      ${(st==="done"&&b.email)?'<button class="btn" data-act="review">Ask review</button>':''}
       <button class="btn btn-danger" data-act="del">Delete</button></div></div>`;
 }
 function renderBookings(){
@@ -283,9 +285,17 @@ function bindRowActions(scope){
   scope.querySelectorAll(".row[data-id]").forEach(row=>{
     const id=row.dataset.id;
     row.querySelectorAll("[data-act]").forEach(btn=>btn.onclick=async()=>{
-      const act=btn.dataset.act, ref=doc(db,"sites",SITE_ID,"bookings",id);
-      if(act==="del"){ if(!confirm("Delete this booking?"))return; await deleteDoc(ref); bookings=bookings.filter(b=>b.id!==id); }
-      else { const status=act==="confirm"?"confirmed":"done"; await updateDoc(ref,{status}); const b=bookings.find(x=>x.id===id); if(b)b.status=status;
+      const act=btn.dataset.act, ref=doc(db,"sites",SITE_ID,"bookings",id), b=bookings.find(x=>x.id===id);
+      if(act==="sms"){ const ph=(b.phone||"").replace(/[^\d+]/g,""); const msg="Hi "+(b.name||"")+", it's Colorado Reflections — on my way for your detail. See you soon!"; window.location.href="sms:"+ph+"?&body="+encodeURIComponent(msg); return; }
+      if(act==="review"){ const ej=(content.booking||{}).emailjs, link=(content.booking||{}).reviewLink;
+        if(!link){ alert("Add your Google review link in Settings first, then try again."); return; }
+        if(!(ej&&ej.serviceId&&ej.templateId&&ej.publicKey&&b.email)){ alert("Email sending isn't set up, or this customer has no email on file."); return; }
+        btn.disabled=true; btn.textContent="Sending…";
+        try{ await window.emailjs.send(ej.serviceId,ej.templateId,{to_email:b.email,name:b.name||"",email:"",title:"How did we do?",message:"Thanks for choosing Colorado Reflections! If you have a moment, we'd really appreciate a quick review — it means a lot: "+link},{publicKey:ej.publicKey}); btn.textContent="Sent"; }
+        catch(e){ btn.disabled=false; btn.textContent="Ask review"; alert("Couldn't send: "+(e.code||e.message)); }
+        return; }
+      if(act==="del"){ if(!confirm("Delete this booking?"))return; await deleteDoc(ref); bookings=bookings.filter(x=>x.id!==id); }
+      else { const status=act==="confirm"?"confirmed":"done"; await updateDoc(ref,{status}); if(b)b.status=status;
         if(act==="confirm" && b && b.date){ await blockSlotForBooking(b); } }
       renderBookings(); renderOverview(); renderAvailability();
     });
@@ -434,6 +444,11 @@ function renderSettings(){
       <label class="fld">Stripe Payment Link URL <input id="sPayLink" placeholder="https://buy.stripe.com/..."></label>
       <label class="fld">Button label <input id="sPayLabel" placeholder="Pay a deposit to lock your spot"></label>
     </div>
+    <div class="card"><h3>Reviews &amp; tips</h3>
+      <p class="hint">Paste your Google review link and a tip link (Venmo, Cash App or PayPal.me). Customers see a <b>Leave a tip</b> button on their booking page, and you can one-tap <b>Ask for a review</b> on finished jobs under Bookings.</p>
+      <label class="fld">Google review link <input id="sReviewLink" placeholder="https://g.page/r/..."></label>
+      <label class="fld">Tip link <input id="sTipLink" placeholder="https://venmo.com/u/yourname"></label>
+    </div>
     <div class="card"><h3>Storage</h3><div class="meter"><span style="width:${pct}%;${pct>80?'background:var(--accent)':''}"></span></div>
       <p class="hint">${kb} KB of 1024 KB used — this holds your site's text, settings and photos.${pct>80?" <b style='color:var(--accent)'>Getting full — remove a photo or two before adding more.</b>":""}</p></div>
     <div class="card"><h3>Account & domain</h3>
@@ -449,12 +464,14 @@ function renderSettings(){
     if(es){ es.innerHTML = ok ? "<b style='color:var(--ok)'>On</b> — booking &amp; promo emails are active." : "<b style='color:var(--accent)'>Off</b> — contact us to switch email on."; } }
   document.querySelectorAll("[data-sec]").forEach(cb=>cb.checked=!!sec[cb.dataset.sec]);
   $("#sPayOn").checked=!!b.payOn; set("sPayLink",b.payLink); set("sPayLabel",b.payLabel);
+  set("sReviewLink",b.reviewLink); set("sTipLink",b.tipLink);
   $("#settingsGrid").addEventListener("input",markDirty); $("#settingsGrid").addEventListener("change",markDirty);
   $("#sPw").onclick=()=>sendPasswordResetEmail(auth,user.email).then(()=>alert("Reset link sent to "+user.email)).catch(e=>alert("Failed: "+e.code));
   $("#sSave").onclick=async()=>{
     s.ig=$("#sIg").value.trim();s.fb=$("#sFb").value.trim();s.yelp=$("#sYelp").value.trim();s.nextdoor=$("#sNd").value.trim();s.igFeedOn=$("#sIgFeed").checked;
     content.hours=$("#sHours").value.trim(); b.notifyEmail=$("#sNotify").value.trim(); (content.brand=content.brand||{}).accent=$("#sAccent").value;
     b.payOn=$("#sPayOn").checked; b.payLink=$("#sPayLink").value.trim(); b.payLabel=$("#sPayLabel").value.trim();
+    b.reviewLink=$("#sReviewLink").value.trim(); b.tipLink=$("#sTipLink").value.trim();
     document.querySelectorAll("[data-sec]").forEach(cb=>sec[cb.dataset.sec]=cb.checked);
     $("#sMsg").textContent="Saving…";
     try{ await setDoc(siteRef,content,{merge:true}); dirty=false; $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); }
