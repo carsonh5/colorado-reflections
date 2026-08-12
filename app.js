@@ -116,6 +116,10 @@ let editMode = false;
 let currentUser = null;
 let dirty = false;
 
+/* text [data-field] elements that should be inline-editable (excludes images, links, and the nested logo) */
+const EDITABLE_FIELDS = ["hero.headline", "hero.em", "hero.sub", "hero.mark", "pricingLead", "workHeading", "area.lead", "story.over", "story.quote", "story.cite", "business.nameSub"];
+const editableSelector = () => "[data-edit],[data-ekey]," + EDITABLE_FIELDS.map(f => `[data-field="${f}"]`).join(",");
+
 /* ============================================================
    LOAD + HYDRATE
    ============================================================ */
@@ -214,7 +218,7 @@ function renderPackages() {
     wrap.innerHTML = content.packages.map((p, pi) => `
       <label class="tier cr-removable${p.featured ? " tier-feature" : ""}" data-pkg="${p.id}" data-remove="packages.${pi}">
         <input type="radio" name="pkg" value="${p.id}" data-base="${p.price}" />
-        ${p.tag ? `<span class="tier-tag">${esc(p.tag)}</span>` : ""}
+        ${p.tag ? `<span class="tier-tag" data-edit="packages.${pi}.tag">${esc(p.tag)}</span>` : ""}
         <span class="tier-head">
           <span class="tier-name" data-edit="packages.${pi}.name">${esc(p.name)}</span>
           <span class="tier-price">from <b>$<span data-edit="packages.${pi}.price">${p.price}</span></b></span>
@@ -235,7 +239,7 @@ function renderVehicles() {
   const seg = document.querySelector("#vehSeg");
   if (!seg) return;
   seg.innerHTML = content.vehicles.map((v, i) => `
-    <label><input type="radio" name="veh" value="${v.id}" data-add="${v.add}" ${i === 0 ? "checked" : ""}/><span>${esc(v.label)}</span></label>`).join("");
+    <label><input type="radio" name="veh" value="${v.id}" data-add="${v.add}" ${i === 0 ? "checked" : ""}/><span><span data-edit="vehicles.${i}.label">${esc(v.label)}</span>${v.add > 0 ? ` <b data-edit="vehicles.${i}.add">+$${v.add}</b>` : ""}</span></label>`).join("");
 }
 function renderTimeSlots() {
   const seg = document.querySelector("#bkTime");
@@ -307,6 +311,12 @@ function applySectionVisibility() {
     const el = document.querySelector(map[key]);
     if (el) el.hidden = !content.sections[key];
   }
+  // header nav links follow their section — hide the link if the page it jumps to is turned off
+  const navMap = { "#pricing": "pricing", "#work": "work", "#story": "story" };
+  document.querySelectorAll(".nav-links a").forEach(a => {
+    const key = navMap[a.getAttribute("href") || ""];
+    if (key) a.style.display = content.sections[key] ? "" : "none";
+  });
 }
 
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
@@ -511,7 +521,7 @@ function openLogin() {
 function toggleEdit() {
   editMode = !editMode;
   document.body.classList.toggle("cr-editing", editMode);
-  document.querySelectorAll("[data-edit],[data-ekey]").forEach(el => {
+  document.querySelectorAll(editableSelector()).forEach(el => {
     el.contentEditable = editMode ? "true" : "false";
     if (editMode) el.addEventListener("input", markDirty); else el.removeEventListener("input", markDirty);
   });
@@ -598,7 +608,7 @@ function enableStructuralControls() {
 }
 function reEnter() { // re-apply edit affordances after a re-render
   if (!editMode) return;
-  document.querySelectorAll("[data-edit],[data-ekey]").forEach(el => { el.contentEditable = "true"; el.addEventListener("input", markDirty); });
+  document.querySelectorAll(editableSelector()).forEach(el => { el.contentEditable = "true"; el.addEventListener("input", markDirty); });
   enableStructuralControls();
   decorateRemovers();
   markDirty();
@@ -957,8 +967,8 @@ function injectOwnerStyles() {
   #crWho{color:#9aa;font-size:12px;margin-right:4px}
   #crSaveBtn{background:var(--accent,#E5362E)!important;border-color:var(--accent,#E5362E)!important}
   html,body{overflow-x:hidden;max-width:100%}
-  body.cr-editing [data-edit],body.cr-editing [data-ekey]{outline:1px dashed rgba(46,134,242,.7);outline-offset:2px;cursor:text;min-height:1em}
-  body.cr-editing [data-edit]:focus,body.cr-editing [data-ekey]:focus{outline:2px solid #2E86F2;background:rgba(46,134,242,.08)}
+  body.cr-editing [contenteditable="true"]{outline:1px dashed rgba(46,134,242,.7);outline-offset:2px;cursor:text;min-height:1em}
+  body.cr-editing [contenteditable="true"]:focus{outline:2px solid #2E86F2;background:rgba(46,134,242,.08)}
   body.cr-editing .mobile-bar{display:none}
   .cr-remove{position:absolute;top:-9px;right:-9px;z-index:6;width:24px;height:24px;border-radius:50%;background:#20242b;color:#cbd4de;border:1px solid #3a4048;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s,color .15s,transform .1s}
   .cr-remove:hover{background:#E5362E;color:#fff;border-color:#E5362E;transform:scale(1.08)}
@@ -968,7 +978,7 @@ function injectOwnerStyles() {
   body.cr-editing .cr-removable{position:relative}
   .cr-edit-hint{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9998;background:#2E86F2;color:#fff;padding:8px 16px;border-radius:20px;font:600 13px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.4)}
   body.cr-editing a:not([data-edit]):not([data-ekey]):not(.cr-remove):not(.cr-adder),body.cr-editing button:not(.cr-remove):not(.cr-adder):not(#crSaveBtn):not(#crDone){pointer-events:none}
-  body.cr-editing [data-edit],body.cr-editing [data-ekey],body.cr-editing #workGrid img,body.cr-editing [data-field="hero.photo"],body.cr-editing .cr-remove,body.cr-editing .cr-adder,body.cr-editing #crHeroEd,body.cr-editing #crHeroEd *{pointer-events:auto}
+  body.cr-editing [contenteditable="true"],body.cr-editing #workGrid img,body.cr-editing [data-field="hero.photo"],body.cr-editing .cr-remove,body.cr-editing .cr-adder,body.cr-editing #crHeroEd,body.cr-editing #crHeroEd *{pointer-events:auto}
   .cr-adder{display:inline-flex;align-items:center;gap:6px;margin:10px auto;background:#123;color:#8cf;border:1px dashed #2E86F2;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}
   .cr-adder svg{flex:none}
   #crDrawer{position:fixed;inset:0;z-index:10000;font-family:system-ui,sans-serif}
