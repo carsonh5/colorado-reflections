@@ -79,7 +79,7 @@ h1,h2{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:
 .build-row{display:flex;flex-direction:column;gap:14px}
 .build-label{font:600 .68rem/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
 .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.seg label{cursor:pointer}
+.seg label{cursor:pointer;min-width:0}
 .seg input{position:absolute;opacity:0;width:0;height:0}
 .seg span{display:flex;align-items:center;justify-content:center;height:48px;border:1px solid var(--line-2);border-radius:2px;font-family:var(--mono);font-weight:500;font-size:.82rem;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-2);background:var(--surface-2);transition:border-color .16s ease,background-color .16s ease,color .16s ease}
 .seg label:hover span{border-color:var(--muted);color:var(--ink)}
@@ -218,6 +218,7 @@ textarea.bk-input{resize:vertical;min-height:64px;font-family:inherit}
   .modal-card{padding:30px 20px 24px}
   .bk-grid{grid-template-columns:1fr}
   .lb-nav{font-size:2.6rem;padding:0 8px}
+  #vehSeg{grid-template-columns:1fr 1fr}   /* vehicle options with prices fit 2-up on phones */
 }
 
 /* ---- self-serve additions ---- */
