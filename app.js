@@ -47,7 +47,8 @@ const DEFAULT_CONTENT = {
     em: "Your driveway.",
     sub: "Interior and exterior detailing for cars, trucks, boats and RVs — done at your home or office in Thornton, Northglenn, Westminster, Broomfield, Arvada and Federal Heights.",
     mark: "Mobile detailing  ·  20+ years  ·  Thornton · Northglenn · Westminster · Broomfield · Arvada · Federal Heights",
-    photo: "./images/hero.jpg"
+    photo: "./images/hero.jpg",
+    photoPosX: 60, photoPosY: 50, photoZoom: 100
   },
   brand: { accent: "#E5362E" },
   pricingLead: "Pick a package, add your vehicle and any extras, and your price updates as you go — no waiting on a callback. We confirm the final number after a couple of quick photos.",
@@ -178,6 +179,7 @@ function hydrate() {
   setText("hero.mark", c.hero.mark);
   const heroImg = document.querySelector('[data-field="hero.photo"]');
   if (heroImg) heroImg.src = c.hero.photo;
+  applyHeroCrop();
 
   setText("pricingLead", c.pricingLead);
   setText("workHeading", c.workHeading);
@@ -325,7 +327,8 @@ export async function submitBooking(payload) {
         (payload.package || "") + (payload.vehicle ? " · " + payload.vehicle : "") + (payload.estimate ? " — " + payload.estimate : ""),
         payload.addons ? "Add-ons: " + payload.addons : "",
         payload.date ? "Date: " + payload.date + " " + (payload.time || "") : (payload.time ? "Time: " + payload.time : ""),
-        payload.address ? "Where: " + payload.address : ""
+        payload.address ? "Where: " + payload.address : "",
+        payload.notes ? "Notes: " + payload.notes : ""
       ].filter(Boolean).join("\n");
       await window.emailjs.send(ej.serviceId, ej.templateId,
         { to_email: content.booking.notifyEmail, name: payload.name || "", email: payload.email || "", title: title, message: message },
@@ -398,7 +401,7 @@ async function maybeShowTrack() {
     const row = (k, v) => { if (!v) return; const p = document.createElement("div"); p.className = "trk-row"; const a = document.createElement("b"); a.textContent = k; const s = document.createElement("span"); s.textContent = v; p.append(a, s); body.appendChild(p); };
     const status = document.createElement("div"); status.className = "trk-status trk-" + (b.status || "new"); status.textContent = ({ new: "Requested — we'll confirm shortly", confirmed: "Confirmed", done: "Completed" })[b.status || "new"]; body.appendChild(status);
     row("Name", b.name); row("Package", b.package); row("Vehicle", b.vehicle);
-    row("Estimate", b.estimate); row("Date", b.date); row("Time", b.time); row("Where", b.address);
+    row("Estimate", b.estimate); row("Date", b.date); row("Time", b.time); row("Where", b.address); row("Notes", b.notes);
     const call = document.createElement("a"); call.className = "crbtn crbtn-primary"; call.href = "tel:+1" + (content?.business?.phone || "").replace(/\D/g, ""); call.textContent = "Call us"; body.appendChild(call);
   } catch (e) { console.warn("track failed", e); }
 }
@@ -426,7 +429,7 @@ async function openMyBookings() {
         st.textContent = ({ new: "Requested", confirmed: "Confirmed", done: "Done" })[b.status || "new"]; card.appendChild(st);
         const line = (k, v) => { if (!v) return; const p = document.createElement("div"); const a = document.createElement("b"); a.textContent = k + ": "; const s = document.createElement("span"); s.textContent = v; p.append(a, s); card.appendChild(p); };
         line("Package", b.package); line("Vehicle", b.vehicle); line("Estimate", b.estimate);
-        line("Date", b.date); line("Time", b.time); line("Where", b.address);
+        line("Date", b.date); line("Time", b.time); line("Where", b.address); line("Notes", b.notes);
         list.appendChild(card);
       });
     }
@@ -511,8 +514,10 @@ function toggleEdit() {
   else { disableStructuralControls(); removeRemovers(); hideEditHint(); }
   document.querySelectorAll("#workGrid figure img, [data-field='hero.photo']").forEach(img => {
     img.style.cursor = editMode ? "pointer" : "";
-    img.onclick = editMode ? () => replacePhoto(img) : null;
+    const isHero = img.matches("[data-field='hero.photo']");
+    img.onclick = editMode ? () => (isHero ? openHeroEditor() : replacePhoto(img)) : null;
   });
+  if (!editMode) { const p = document.getElementById("crHeroEd"); if (p) p.remove(); }
 }
 
 /* ---- remove (×) buttons on repeatable items ---- */
@@ -614,6 +619,43 @@ async function compress(file, maxW = 1100, quality = 0.72) {
   URL.revokeObjectURL(img.src);
   return cv.toDataURL("image/jpeg", quality);
 }
+function applyHeroCrop() {
+  const heroImg = document.querySelector('[data-field="hero.photo"]');
+  if (!heroImg) return;
+  const h = content.hero || {};
+  const x = h.photoPosX == null ? 60 : h.photoPosX, y = h.photoPosY == null ? 50 : h.photoPosY, z = h.photoZoom == null ? 100 : h.photoZoom;
+  heroImg.style.objectPosition = x + "% " + y + "%";
+  heroImg.style.transformOrigin = x + "% " + y + "%";
+  heroImg.style.transform = z > 100 ? "scale(" + (z / 100) + ")" : "";
+}
+
+/* ---- hero reframe (crop) tool — sliders for pan + zoom, live preview ---- */
+function openHeroEditor() {
+  if (document.getElementById("crHeroEd")) return;
+  const h = content.hero;
+  if (h.photoPosX == null) h.photoPosX = 60;
+  if (h.photoPosY == null) h.photoPosY = 50;
+  if (h.photoZoom == null) h.photoZoom = 100;
+  const panel = document.createElement("div");
+  panel.id = "crHeroEd";
+  panel.innerHTML = `
+    <div class="crhe-title">Reframe hero photo</div>
+    <label>Left ↔ right <input type="range" id="crheX" min="0" max="100" value="${h.photoPosX}"></label>
+    <label>Up ↕ down <input type="range" id="crheY" min="0" max="100" value="${h.photoPosY}"></label>
+    <label>Zoom <input type="range" id="crheZ" min="100" max="200" value="${h.photoZoom}"></label>
+    <div class="crhe-row">
+      <button id="crheReplace" class="crbtn">Replace photo</button>
+      <button id="crheReset" class="crbtn">Reset</button>
+      <button id="crheDone" class="crbtn crbtn-primary">Done</button>
+    </div>`;
+  document.body.appendChild(panel);
+  const bind = (id, key) => { const el = panel.querySelector("#" + id); el.oninput = () => { content.hero[key] = +el.value; applyHeroCrop(); markDirty(); }; };
+  bind("crheX", "photoPosX"); bind("crheY", "photoPosY"); bind("crheZ", "photoZoom");
+  panel.querySelector("#crheReplace").onclick = () => { const img = document.querySelector('[data-field="hero.photo"]'); replacePhoto(img); };
+  panel.querySelector("#crheReset").onclick = () => { content.hero.photoPosX = 50; content.hero.photoPosY = 50; content.hero.photoZoom = 100; panel.querySelector("#crheX").value = 50; panel.querySelector("#crheY").value = 50; panel.querySelector("#crheZ").value = 100; applyHeroCrop(); markDirty(); };
+  panel.querySelector("#crheDone").onclick = () => panel.remove();
+}
+
 async function replacePhoto(img) {
   const f = await pickImage(); if (!f) return;
   const data = await compress(f);
@@ -908,7 +950,7 @@ function injectOwnerStyles() {
   body.cr-editing .cr-removable{position:relative}
   .cr-edit-hint{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9998;background:#2E86F2;color:#fff;padding:8px 16px;border-radius:20px;font:600 13px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.4)}
   body.cr-editing a:not([data-edit]):not([data-ekey]):not(.cr-remove):not(.cr-adder),body.cr-editing button:not(.cr-remove):not(.cr-adder):not(#crSaveBtn):not(#crDone){pointer-events:none}
-  body.cr-editing [data-edit],body.cr-editing [data-ekey],body.cr-editing #workGrid img,body.cr-editing [data-field="hero.photo"],body.cr-editing .cr-remove,body.cr-editing .cr-adder{pointer-events:auto}
+  body.cr-editing [data-edit],body.cr-editing [data-ekey],body.cr-editing #workGrid img,body.cr-editing [data-field="hero.photo"],body.cr-editing .cr-remove,body.cr-editing .cr-adder,body.cr-editing #crHeroEd,body.cr-editing #crHeroEd *{pointer-events:auto}
   .cr-adder{display:inline-flex;align-items:center;gap:6px;margin:10px auto;background:#123;color:#8cf;border:1px dashed #2E86F2;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}
   .cr-adder svg{flex:none}
   #crDrawer{position:fixed;inset:0;z-index:10000;font-family:system-ui,sans-serif}
@@ -944,6 +986,13 @@ function injectOwnerStyles() {
   .trk-row b{color:#8fa1b5;font-weight:600}.trk-row span{text-align:right}
   .trk-status{margin:2px 0 14px;padding:10px 12px;border-radius:8px;font-weight:600;text-align:center}
   .trk-new{background:#3a2f12;color:#f5c451}.trk-confirmed{background:#12331f;color:#7fd47f}.trk-done{background:#22262c;color:#8fa1b5}
+  #crHeroEd{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:10001;width:min(360px,92vw);background:#14161a;border:1px solid #2a2f37;border-radius:14px;padding:16px 18px;box-shadow:0 16px 50px rgba(0,0,0,.55);font-family:system-ui,sans-serif;color:#e8eef4}
+  #crHeroEd .crhe-title{font-weight:700;font-size:.95rem;margin:0 0 10px}
+  #crHeroEd label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:.82rem;color:#9fb0c3;margin:0 0 10px}
+  #crHeroEd input[type=range]{flex:1;max-width:200px;accent-color:#2E86F2}
+  #crHeroEd .crhe-row{display:flex;gap:8px;margin-top:6px}
+  #crHeroEd .crbtn{flex:1;padding:9px 8px;border-radius:8px;border:1px solid #2a2f37;background:#1c2027;color:#e8eef4;font-size:.82rem;font-weight:600;cursor:pointer}
+  #crHeroEd .crbtn-primary{background:#2E86F2;border-color:#2E86F2}
   `;
   document.head.appendChild(s);
 }

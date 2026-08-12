@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="./styles.css?v=7" />
+<link rel="stylesheet" href="./styles.css?v=8" />
 </head>
 <body>
 
@@ -186,7 +186,11 @@
       </div>
       <div class="bk-field"><label class="build-label" for="bkEmail">Email <span style="opacity:.6">(optional)</span></label><input type="email" id="bkEmail" class="bk-input" autocomplete="email" /></div>
       <div class="bk-field bk-addr"><label class="build-label" for="bkAddr">Where we're coming (address or area)</label><input type="text" id="bkAddr" class="bk-input" autocomplete="off" placeholder="Start typing your address…" /><div class="addr-sug" id="bkAddrSug" hidden></div></div>
-      <div class="bk-field" id="bkPhotoField"><label class="build-label">Add photos of your vehicle (optional)</label><input type="file" id="bkPhotos" accept="image/*" multiple /></div>
+      <div class="bk-field" id="bkPhotoField"><span class="build-label">Add photos of your vehicle (optional)</span>
+        <label class="bk-file"><input type="file" id="bkPhotos" accept="image/*" multiple hidden />
+          <span class="bk-file-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg>Add photos</span>
+          <span class="bk-file-names" id="bkPhotoNames">No photos added</span></label></div>
+      <div class="bk-field"><label class="build-label" for="bkNotes">Anything else? <span style="opacity:.6">(optional)</span></label><textarea id="bkNotes" class="bk-input" rows="3" placeholder="Gate code, heavy pet hair, specific concerns, best time to reach you…"></textarea></div>
       <p class="bk-err" id="bkErr" hidden>Add your name and a mobile number so we can confirm.</p>
       <button type="button" class="btn btn-block" id="bkSubmit">Request this time</button>
       <p class="est-fine">No charge yet. We text you to confirm the time and final price, then you're booked.</p>
@@ -204,7 +208,7 @@
 </div>
 
 <script src="./firebase-config.js"></script>
-<script type="module" src="./app.js?v=16"></script>
+<script type="module" src="./app.js?v=17"></script>
 
 <!-- Quote engine + booking + lightbox + map (coordinates with app.js via window.__CR_*) -->
 <script>
@@ -318,14 +322,15 @@
     }
     var q=getQuote();
     var email=document.getElementById('bkEmail').value.trim();
-    var payload={ name:name, phone:phone, email:email, date:date||'', time:t?t.value:'', address:addr,
+    var notes=document.getElementById('bkNotes').value.trim();
+    var payload={ name:name, phone:phone, email:email, date:date||'', time:t?t.value:'', address:addr, notes:notes,
       package:q.pkg||'Custom', vehicle:q.veh||'', estimate:q.hasPkg?money(q.total):'by text',
       addons:q.extras.filter(function(x){return !x.included;}).map(function(x){return x.name;}).join(', ') };
     if(window.__CR_submitBooking){ window.__CR_submitBooking(payload).then(function(id){
       if(id){ var tr=document.getElementById('bkTrack'); tr.href=location.origin+location.pathname+'?track='+id; tr.hidden=false; }
     }); }
     var lines=['Detail request — '+name]; if(q.hasPkg) lines.push(q.pkg+(q.veh?' ('+q.veh+')':'')+' — '+money(q.total)+' est.');
-    if(date) lines.push('Date: '+date); if(t) lines.push('Time: '+t.value); if(addr) lines.push('Location: '+addr); lines.push('Phone: '+phone);
+    if(date) lines.push('Date: '+date); if(t) lines.push('Time: '+t.value); if(addr) lines.push('Location: '+addr); if(notes) lines.push('Notes: '+notes); lines.push('Phone: '+phone);
     document.getElementById('bkText').href='sms:'+PHONERAW+'?&body='+encodeURIComponent(lines.join('\n'));
     document.getElementById('bkDoneNote').textContent="We'll text "+phone+' to confirm your time'+(date?' on '+date:'')+' and the final price.';
     var pay=document.getElementById('bkPay'), bcfg=(C().booking)||{};
@@ -334,6 +339,10 @@
     stepForm.hidden=true; stepDone.hidden=false;
   });
   document.getElementById('bkRestart').addEventListener('click', function(){ stepDone.hidden=true; stepForm.hidden=false; });
+
+  /* styled file input — show chosen count */
+  (function(){ var fi=document.getElementById('bkPhotos'), nm=document.getElementById('bkPhotoNames'); if(!fi||!nm) return;
+    fi.addEventListener('change', function(){ var n=fi.files?fi.files.length:0; nm.textContent = n===0?'No photos added':(n===1?fi.files[0].name:n+' photos added'); }); })();
 
   /* address autocomplete — free Photon geocoder (no key/billing), graceful fallback to plain text */
   (function(){

@@ -43,7 +43,7 @@ h1,h2{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:
 .cta-text{font-family:var(--mono);font-weight:500;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
 
 /* HERO — full-bleed dark studio photo, left-aligned, no pill, no glow */
-.hero{position:relative;min-height:86vh;display:flex;align-items:flex-end;isolation:isolate}
+.hero{position:relative;min-height:86vh;display:flex;align-items:flex-end;isolation:isolate;overflow:hidden}
 .hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:60% 50%;z-index:-2}
 .hero-veil{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(8,8,9,.92) 0%,rgba(8,8,9,.62) 38%,rgba(8,8,9,.08) 64%,rgba(8,8,9,0) 100%),linear-gradient(0deg,rgba(8,8,9,.85) 0%,rgba(8,8,9,0) 42%)}
 .hero-in{padding-block:0 72px;width:100%}
@@ -200,7 +200,13 @@ h1,h2{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:
 .bk-input::placeholder{color:var(--muted)}
 .seg-3{grid-template-columns:repeat(3,1fr)}
 .seg-wrap{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
+.seg span{padding:0 6px;font-size:.76rem;letter-spacing:.01em;line-height:1.12;text-align:center}
 .seg input:disabled + span{opacity:.3;cursor:not-allowed;text-decoration:line-through}
+textarea.bk-input{resize:vertical;min-height:64px;font-family:inherit}
+.bk-file{display:flex;align-items:center;gap:12px;cursor:pointer}
+.bk-file-btn{display:inline-flex;align-items:center;gap:7px;padding:11px 16px;border:1px solid var(--line-2);border-radius:2px;background:var(--surface-2);color:var(--ink);font-family:var(--mono);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;transition:border-color .16s,background-color .16s}
+.bk-file:hover .bk-file-btn{border-color:var(--muted)}
+.bk-file-names{font-size:.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bk-slotnote{font-size:.82rem;color:var(--muted);margin:8px 0 0;min-height:1em}
 .bk-slotnote.warn{color:var(--accent)}
 .bk-err{color:var(--accent);font-size:.84rem;margin:0 0 12px}
@@ -238,4 +244,7 @@ h1,h2{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:
   .nav .logo span{display:none}          /* hide "Mobile Detail" subtext to stop overflow next to CTA */
   .foot .logo span{display:block;margin-left:0;margin-top:4px}
   .cta-text{font-size:.72rem;white-space:nowrap}
+  /* hero: start text clear of the sticky nav and let the section grow to fit (no top-crop) */
+  .hero{align-items:flex-start;min-height:auto}
+  .hero-in{padding-block:44px 56px}
 }

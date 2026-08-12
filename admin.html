@@ -267,7 +267,7 @@ function renderOverview(){
 function rowBooking(b){
   const st=b.status||"new";
   return `<div class="row" data-id="${b.id}">
-    <div><b>${esc(b.name||"(no name)")}</b><div class="sub">${esc(b.phone||"")}${b.email?" · "+esc(b.email):""}</div></div>
+    <div><b>${esc(b.name||"(no name)")}</b><div class="sub">${esc(b.phone||"")}${b.email?" · "+esc(b.email):""}</div>${b.notes?`<div class="sub" style="color:var(--warn);margin-top:3px">Note: ${esc(b.notes)}</div>`:""}</div>
     <div>${esc(b.package||"")}${b.vehicle?" · "+esc(b.vehicle):""}<div class="sub">${esc(b.estimate||"")}</div></div>
     <div>${esc(b.date||"—")}<div class="sub">${esc(b.time||"")}</div></div>
     <div class="acts"><span class="badge b-${st}">${st}</span>
