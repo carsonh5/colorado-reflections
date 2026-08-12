@@ -459,6 +459,8 @@ function mountOwnerBar() {
   bar.innerHTML = `
     <div id="crOwnerTools">
       <span id="crWho">Editing site</span>
+      <button id="crReframeBtn">Reframe hero</button>
+      <button id="crPhotosBtn">Photos</button>
       <button id="crSaveBtn">Save</button>
       <button id="crDone">Done</button>
     </div>`;
@@ -466,6 +468,8 @@ function mountOwnerBar() {
   injectOwnerStyles();
   bar.style.display = "none";                       // nothing floats during normal browsing
 
+  document.getElementById("crReframeBtn").onclick = openHeroEditor;
+  document.getElementById("crPhotosBtn").onclick = openGalleryManager;
   document.getElementById("crSaveBtn").onclick = saveContent;
   document.getElementById("crDone").onclick = () => { window.location.href = "./admin.html"; };
 
@@ -526,14 +530,6 @@ function toggleEdit() {
     img.style.cursor = editMode ? "pointer" : "";
     img.onclick = editMode ? () => replacePhoto(img) : null;
   });
-  // hero <img> sits behind the overlay (z-index:-2) so it can't be clicked — give a visible button instead
-  const heroSec = document.querySelector(".hero");
-  let rf = document.getElementById("crReframe");
-  if (editMode && heroSec && !rf) {
-    rf = document.createElement("button"); rf.id = "crReframe"; rf.type = "button";
-    rf.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>Reframe photo`;
-    rf.onclick = openHeroEditor; heroSec.appendChild(rf);
-  } else if (!editMode && rf) { rf.remove(); }
   // managed fields (edited in the dashboard, not inline): tapping them explains where to change them
   document.querySelectorAll('[data-field="hours"],[data-phone],[data-email],[data-field="business.name"]').forEach(el => {
     el.onclick = editMode ? (e) => { e.preventDefault(); showManagedHint(); } : null;
@@ -691,6 +687,30 @@ function openHeroEditor() {
   panel.querySelector("#crheReplace").onclick = () => { const img = document.querySelector('[data-field="hero.photo"]'); replacePhoto(img); };
   panel.querySelector("#crheReset").onclick = () => { content.hero.photoPosX = 50; content.hero.photoPosY = 50; content.hero.photoZoom = 100; panel.querySelector("#crheX").value = 50; panel.querySelector("#crheY").value = 50; panel.querySelector("#crheZ").value = 100; applyHeroCrop(); markDirty(); };
   panel.querySelector("#crheDone").onclick = () => panel.remove();
+}
+
+/* ---- full-screen gallery manager (mobile-friendly: add / replace / remove / caption) ---- */
+function openGalleryManager() {
+  if (document.getElementById("crGal")) return;
+  const panel = document.createElement("div");
+  panel.id = "crGal";
+  panel.innerHTML = `<div class="crgal-head"><b>Manage photos</b><button id="crGalDone" class="crbtn crbtn-primary">Done</button></div><div id="crGalList"></div><button id="crGalAdd" class="crbtn crgal-add">Add a photo</button>`;
+  document.body.appendChild(panel);
+  const list = panel.querySelector("#crGalList");
+  const render = () => {
+    list.innerHTML = content.gallery.map((ph, i) => `
+      <div class="crgal-row">
+        <img src="${esc(ph.src)}" alt="">
+        <input class="crgal-cap" data-i="${i}" value="${esc(ph.cap || "")}" placeholder="Caption (optional)">
+        <div class="crgal-btns"><button class="crbtn" data-rep="${i}">Replace</button><button class="crbtn crbtn-danger" data-del="${i}">Remove</button></div>
+      </div>`).join("") || `<p style="color:#9aa;padding:20px 0">No photos yet — add one below.</p>`;
+    list.querySelectorAll(".crgal-cap").forEach(inp => inp.oninput = () => { content.gallery[+inp.dataset.i].cap = inp.value; markDirty(); });
+    list.querySelectorAll("[data-rep]").forEach(b => b.onclick = async () => { const f = await pickImage(); if (!f) return; content.gallery[+b.dataset.rep].src = await compress(f); renderGallery(); markDirty(); render(); });
+    list.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { content.gallery.splice(+b.dataset.del, 1); renderGallery(); markDirty(); render(); });
+  };
+  render();
+  panel.querySelector("#crGalAdd").onclick = async () => { const f = await pickImage(); if (!f) return; content.gallery.push({ src: await compress(f), cap: "" }); renderGallery(); markDirty(); render(); };
+  panel.querySelector("#crGalDone").onclick = () => { panel.remove(); renderGallery(); if (editMode) reEnter(); };
 }
 
 async function replacePhoto(img) {
@@ -992,6 +1012,17 @@ function injectOwnerStyles() {
   #crReframe{position:absolute;top:16px;right:16px;z-index:8;display:inline-flex;align-items:center;gap:7px;background:rgba(12,13,16,.82);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:9px 13px;font:600 13px system-ui;cursor:pointer;backdrop-filter:blur(6px)}
   #crReframe:hover{background:#2E86F2;border-color:#2E86F2}
   .cr-manage-hint{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9998;background:#20242b;color:#fff;border:1px solid #3a4048;padding:10px 18px;border-radius:22px;font:600 13px system-ui;box-shadow:0 8px 26px rgba(0,0,0,.5)}
+  #crGal{position:fixed;inset:0;z-index:10002;background:#0c0d10;color:#e8eef4;overflow:auto;padding:16px;font-family:system-ui,sans-serif;-webkit-overflow-scrolling:touch}
+  #crGal .crgal-head{position:sticky;top:-16px;background:#0c0d10;display:flex;justify-content:space-between;align-items:center;padding:10px 0 14px;margin:-4px 0 6px;border-bottom:1px solid #232830}
+  #crGal .crgal-head b{font-size:1.1rem}
+  #crGal .crgal-row{display:flex;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #232830;flex-wrap:wrap}
+  #crGal .crgal-row img{width:72px;height:54px;object-fit:cover;border-radius:6px;flex:none;background:#161618}
+  #crGal .crgal-cap{flex:1;min-width:140px;padding:10px 11px;background:#14161a;border:1px solid #2a2f37;border-radius:8px;color:#fff;font-size:.9rem}
+  #crGal .crgal-btns{display:flex;gap:6px;flex:none}
+  #crGal .crbtn{padding:9px 13px;border-radius:8px;border:1px solid #2a2f37;background:#1c2027;color:#e8eef4;font-size:.84rem;font-weight:600;cursor:pointer}
+  #crGal .crbtn-primary{background:#2E86F2;border-color:#2E86F2}
+  #crGal .crbtn-danger{background:#3a1618;border-color:#5a2327;color:#ff9aa2}
+  #crGal .crgal-add{width:100%;margin-top:14px;padding:13px}
   body.cr-editing .cr-removable{position:relative}
   .cr-edit-hint{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9998;background:#2E86F2;color:#fff;padding:8px 16px;border-radius:20px;font:600 13px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.4)}
   body.cr-editing a:not([data-edit]):not([data-ekey]):not(.cr-remove):not(.cr-adder),body.cr-editing button:not(.cr-remove):not(.cr-adder):not(#crSaveBtn):not(#crDone){pointer-events:none}
