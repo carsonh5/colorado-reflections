@@ -998,6 +998,7 @@ function injectOwnerStyles() {
   #crHeroEd .crhe-row{display:flex;gap:8px;margin-top:6px}
   #crHeroEd .crbtn{flex:1;padding:9px 8px;border-radius:8px;border:1px solid #2a2f37;background:#1c2027;color:#e8eef4;font-size:.82rem;font-weight:600;cursor:pointer}
   #crHeroEd .crbtn-primary{background:#2E86F2;border-color:#2E86F2}
+  body.cr-editing #crHeroEd button,body.cr-editing #crHeroEd input{pointer-events:auto!important}
   `;
   document.head.appendChild(s);
 }
