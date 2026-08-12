@@ -121,6 +121,8 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
   <div class="login-card">
     <h1>Colorado Reflections</h1>
     <p>Owner sign in</p>
+    <button class="btn btn-block" id="lGoogle" style="margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:9px"><svg width="17" height="17" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.71-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.02-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.02 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>Sign in with Google</button>
+    <div style="display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.78rem;margin-bottom:12px"><span style="flex:1;height:1px;background:var(--line)"></span>or with a password<span style="flex:1;height:1px;background:var(--line)"></span></div>
     <label class="fld">Email <input id="lEmail" type="email" autocomplete="username"></label>
     <label class="fld">Password <input id="lPw" type="password" autocomplete="current-password"></label>
     <p class="msg" id="lMsg"></p>
@@ -192,7 +194,7 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
 <script src="./firebase-config.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const SITE_ID = "colorado-reflections";
@@ -211,13 +213,14 @@ const markDirty=()=>{dirty=true;};
 
 /* ---- auth ---- */
 $("#lGo").onclick = () => { $("#lMsg").textContent="Signing in…"; signInWithEmailAndPassword(auth,$("#lEmail").value.trim(),$("#lPw").value).catch(e=>$("#lMsg").textContent="Sign in failed ("+e.code+")."); };
+$("#lGoogle").onclick = () => { $("#lMsg").textContent="Opening Google…"; signInWithPopup(auth, new GoogleAuthProvider()).catch(e=>{ $("#lMsg").textContent = e.code==="auth/popup-closed-by-user" ? "" : "Google sign-in failed ("+e.code+")."; }); };
 $("#lSet").onclick = () => { const em=$("#lEmail").value.trim(); if(!em){$("#lMsg").textContent="Enter your email first.";return;} sendPasswordResetEmail(auth,em).then(()=>{$("#lMsg").style.color="var(--ok)";$("#lMsg").textContent="Sent — check "+em+" to set your password.";}).catch(e=>$("#lMsg").textContent="Couldn't send ("+e.code+")."); };
 $("#signout").onclick = () => signOut(auth);
 $("#lPw").addEventListener("keydown",e=>{if(e.key==="Enter")$("#lGo").click();});
 
 onAuthStateChanged(auth, async (u) => {
   user = (u && OWNERS.includes(u.email)) ? u : null;
-  if (!user) { $("#login").style.display="grid"; $("#app").style.display="none"; if(u) signOut(auth); return; }
+  if (!user) { $("#login").style.display="grid"; $("#app").style.display="none"; if(u){ $("#lMsg").textContent="That account ("+u.email+") isn't an owner of this site."; signOut(auth); } return; }
   $("#login").style.display="none"; $("#app").style.display="grid";
   $("#whoami").textContent = user.email;
   await loadAll();
