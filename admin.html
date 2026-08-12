@@ -423,10 +423,13 @@ $("#pSend").onclick=async()=>{
 
 /* ---- settings ---- */
 function renderSettings(){
-  const b=content.booking||(content.booking={}), s=content.social||(content.social={}), sec=content.sections||(content.sections={});
+  const b=content.booking||(content.booking={}), s=content.social||(content.social={}), sec=content.sections||(content.sections={}), biz=content.business||(content.business={});
   const kb=Math.round(new Blob([JSON.stringify(content)]).size/1024), pct=Math.min(100,Math.round(kb/1024*100));
   $("#settingsGrid").innerHTML = `
-    <div class="card"><h3>Business & social</h3>
+    <div class="card"><h3>Business & contact</h3>
+      <label class="fld">Business name <input id="sName"></label>
+      <label class="fld">Phone (tap-to-call &amp; text) <input id="sPhone" placeholder="(303) 555-0199"></label>
+      <label class="fld">Public email (shown on site) <input id="sEmail" placeholder="you@email.com"></label>
       <label class="fld">Instagram handle <input id="sIg"></label>
       <label class="fld">Facebook URL <input id="sFb"></label>
       <label class="fld">Yelp URL <input id="sYelp"></label>
@@ -464,6 +467,7 @@ function renderSettings(){
       <p class="hint">Questions or changes to the site? Text <b>Carson at 901-652-7778</b> — happy to help anytime.</p></div>
     <div class="savebar" style="grid-column:1/-1"><button class="btn btn-primary" id="sSave">Save settings</button><button class="btn" id="sCancel">Cancel</button><span class="msg" id="sMsg"></span></div>`;
   const set=(id,v)=>{const e=$("#"+id); if(e)e.value=v||"";};
+  set("sName",biz.name);set("sPhone",biz.phone);set("sEmail",biz.email);
   set("sIg",s.ig);set("sFb",s.fb);set("sYelp",s.yelp);set("sNd",s.nextdoor);
   set("sHours",content.hours);set("sNotify",b.notifyEmail);
   { const ej=b.emailjs||{}, ok=!!(ej.serviceId&&ej.templateId&&ej.publicKey), es=$("#ejStatus");
@@ -475,6 +479,7 @@ function renderSettings(){
   $("#sCancel").onclick=()=>{ if(!dirty || confirm("Discard your unsaved changes?")){ dirty=false; loadAll(); } };
   $("#sPw").onclick=()=>sendPasswordResetEmail(auth,user.email).then(()=>alert("Reset link sent to "+user.email)).catch(e=>alert("Failed: "+e.code));
   $("#sSave").onclick=async()=>{
+    biz.name=$("#sName").value.trim()||biz.name; biz.phone=$("#sPhone").value.trim(); biz.email=$("#sEmail").value.trim();
     s.ig=$("#sIg").value.trim();s.fb=$("#sFb").value.trim();s.yelp=$("#sYelp").value.trim();s.nextdoor=$("#sNd").value.trim();
     content.hours=$("#sHours").value.trim(); b.notifyEmail=$("#sNotify").value.trim();
     b.payOn=$("#sPayOn").checked; b.payLink=$("#sPayLink").value.trim(); b.payLabel=$("#sPayLabel").value.trim();

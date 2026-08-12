@@ -252,7 +252,7 @@
 <!-- Quote engine + booking + lightbox + map (coordinates with app.js via window.__CR_*) -->
 <script>
 (function(){
-  var PHONERAW = '+13035898214';
+  function PHONERAW(){ var p=((window.__CR_content&&window.__CR_content().business)||{}).phone||''; var d=String(p).replace(/\D/g,''); return d?('+1'+d):'+13035898214'; }
   var form = document.getElementById('quote');
   var est = document.getElementById('est'), note = document.getElementById('estNote');
 
@@ -370,7 +370,7 @@
     }); }
     var lines=['Detail request — '+name]; if(q.hasPkg) lines.push(q.pkg+(q.veh?' ('+q.veh+')':'')+' — '+money(q.total)+' est.');
     if(date) lines.push('Date: '+date); if(t) lines.push('Time: '+t.value); if(addr) lines.push('Location: '+addr); if(notes) lines.push('Notes: '+notes); lines.push('Phone: '+phone);
-    document.getElementById('bkText').href='sms:'+PHONERAW+'?&body='+encodeURIComponent(lines.join('\n'));
+    document.getElementById('bkText').href='sms:'+PHONERAW()+'?&body='+encodeURIComponent(lines.join('\n'));
     document.getElementById('bkDoneNote').textContent="We'll text "+phone+' to confirm your time'+(date?' on '+date:'')+' and the final price.';
     var pay=document.getElementById('bkPay'), bcfg=(C().booking)||{};
     if(pay){ var pl=String(bcfg.payLink||''); var okPay=bcfg.payOn && /^https?:\/\//i.test(pl);
