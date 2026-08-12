@@ -44,6 +44,16 @@ body.dirty .savebar{display:flex}
 .av-f{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;font-size:.74rem;color:var(--muted)}
 .av-f .fld-in{width:100%;min-width:0}
 .av-add .btn{white-space:nowrap}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-nav b{font-size:.95rem}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-h{text-align:center;font-size:.66rem;color:var(--muted);font-weight:700;padding:2px 0}
+.cal-c{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.82rem;color:var(--muted);border:1px solid transparent;border-radius:8px}
+.cal-c.cal-has{color:#fff;background:var(--panel2);border-color:var(--line);cursor:pointer;font-weight:600}
+.cal-c.cal-today{outline:2px solid var(--accent);outline-offset:-2px;color:#fff}
+.cal-empty{border:none}
+.cal-dot{position:absolute;top:3px;right:5px;font-size:.58rem;font-weight:700;color:#fff;background:var(--accent);min-width:14px;height:14px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.cal-day-h{margin:14px 0 6px;font-weight:700;font-size:.9rem}
 /* shell */
 #app{display:none;min-height:100vh;grid-template-columns:230px 1fr}
 #mEdit{display:none}
@@ -323,6 +333,37 @@ function availState(){
   a.horizonDays = Number(a.horizonDays)||60;
   return a;
 }
+let calBase=null;
+function fmtDate(d){ try{ return new Date(d+"T00:00:00").toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}); }catch(e){ return d; } }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function upcomingHtml(){
+  const t=new Date(); t.setHours(0,0,0,0);
+  const up=bookings.filter(b=>b.date && new Date(b.date+"T00:00:00")>=t && (b.status||"new")!=="done")
+    .sort((a,b)=>((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||""))).slice(0,3);
+  if(!up.length) return '<p class="hint">No upcoming bookings yet.</p>';
+  return up.map(b=>`<div class="av-row"><span class="av-label">${esc(b.name||'(no name)')}<div class="sub">${esc(fmtDate(b.date))}${b.time?' · '+esc(b.time):''}${b.package?' · '+esc(b.package):''}</div></span><span class="badge b-${b.status||'new'}">${b.status||'new'}</span></div>`).join("");
+}
+function calendarHtml(){
+  if(!calBase){ const d=new Date(); calBase={y:d.getFullYear(),m:d.getMonth()}; }
+  const {y,m}=calBase, first=new Date(y,m,1), startDow=first.getDay(), days=new Date(y,m+1,0).getDate();
+  const byDate={}; bookings.forEach(b=>{ if(b.date && (b.status||'new')!=='done'){ (byDate[b.date]=byDate[b.date]||0); byDate[b.date]++; } });
+  const ts=todayStr();
+  let cells=['S','M','T','W','T','F','S'].map(d=>`<div class="cal-h">${d}</div>`).join('');
+  for(let i=0;i<startDow;i++) cells+='<div class="cal-c cal-empty"></div>';
+  for(let d=1;d<=days;d++){ const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); const cnt=byDate[ds]||0;
+    cells+=`<div class="cal-c${ds===ts?' cal-today':''}${cnt?' cal-has':''}" ${cnt?`data-day="${ds}"`:''}>${d}${cnt?`<span class="cal-dot">${cnt}</span>`:''}</div>`; }
+  const chev=(d)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="${d==='l'?'M15 18l-6-6 6-6':'M9 18l6-6-6-6'}"/></svg>`;
+  return `<div class="cal-nav"><button class="btn btn-icon" id="calPrev">${chev('l')}</button><b>${first.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</b><button class="btn btn-icon" id="calNext">${chev('r')}</button></div><div class="cal-grid">${cells}</div><div id="calDay"></div>`;
+}
+function wireCal(){
+  const rr=()=>{ $("#calWrap").innerHTML=calendarHtml(); wireCal(); };
+  if($("#calPrev")) $("#calPrev").onclick=()=>{ calBase.m--; if(calBase.m<0){calBase.m=11;calBase.y--;} rr(); };
+  if($("#calNext")) $("#calNext").onclick=()=>{ calBase.m++; if(calBase.m>11){calBase.m=0;calBase.y++;} rr(); };
+  document.querySelectorAll('#calWrap .cal-c[data-day]').forEach(c=>c.onclick=()=>{
+    const ds=c.dataset.day, list=bookings.filter(b=>b.date===ds).sort((a,b)=>((a.time||"")).localeCompare(b.time||""));
+    $("#calDay").innerHTML=`<div class="cal-day-h">${esc(fmtDate(ds))}</div>`+list.map(b=>`<div class="av-row"><span class="av-label">${esc(b.name||'(no name)')}<div class="sub">${b.time?esc(b.time)+' · ':''}${esc(b.package||'')}${b.phone?' · '+esc(b.phone):''}</div></span><span class="badge b-${b.status||'new'}">${b.status||'new'}</span></div>`).join('');
+  });
+}
 function renderAvailability(){
   const a=availState();
   const slotRows = a.slots.map((s,i)=>`<div class="av-row"><input class="fld-in" data-slot="${i}" value="${esc(s)}"><button class="btn btn-danger btn-icon" data-slotdel="${i}" title="Remove">${xSvg()}</button></div>`).join("") || `<p class="hint">No time slots yet — add one below.</p>`;
@@ -331,6 +372,8 @@ function renderAvailability(){
   const blkRows = a.blocked.length ? a.blocked.map((b,i)=>({b,i})).sort((x,y)=>(x.b.date||"").localeCompare(y.b.date||"")).map(({b,i})=>`<div class="av-row"><span class="av-label">${esc(b.date||"")}<div class="sub">${b.slot?esc(b.slot):"Whole day"}</div></span><button class="btn btn-danger btn-icon" data-blkdel="${i}" title="Unblock">${xSvg()}</button></div>`).join("") : `<p class="hint">Nothing blocked. Confirmed bookings block their slot automatically.</p>`;
   const slotOpts = a.slots.map(s=>`<option value="${esc(s)}">`).join("");
   $("#availGrid").innerHTML = `
+    <div class="card" style="grid-column:1/-1"><h3>Upcoming</h3><div id="upNext">${upcomingHtml()}</div></div>
+    <div class="card" style="grid-column:1/-1"><h3>Calendar</h3><div id="calWrap">${calendarHtml()}</div></div>
     <div class="card"><h3>Booking time slots</h3>
       <p class="hint">These are the time choices a customer picks from. Use windows (Morning/Midday) or exact times — up to you.</p>
       <div id="slotList">${slotRows}</div>
@@ -361,6 +404,7 @@ function renderAvailability(){
     </div>
     <div class="savebar" style="grid-column:1/-1"><button class="btn btn-primary" id="avSave">Save availability</button><button class="btn" id="avCancel">Cancel</button><span class="msg" id="avMsg"></span></div>`;
   $("#avLead").value=String(a.leadDays); $("#avHorizon").value=String([14,30,60,90].includes(a.horizonDays)?a.horizonDays:60);
+  wireCal();
   // wire
   $("#slotList").querySelectorAll("[data-slot]").forEach(inp=>inp.oninput=()=>{a.slots[+inp.dataset.slot]=inp.value;markDirty();});
   $("#slotList").querySelectorAll("[data-slotdel]").forEach(b=>b.onclick=()=>{a.slots.splice(+b.dataset.slotdel,1);markDirty();renderAvailability();});
