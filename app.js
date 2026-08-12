@@ -93,7 +93,7 @@ const DEFAULT_CONTENT = {
   },
   hours: "Mon–Fri 9:00a–7:30p · Sat 10:00a–7:30p · Sun 11:00a–7:30p · By appointment.",
   social: { ig: "Colorado_reflections_detail", fb: "", yelp: "https://www.yelp.com/biz/colorado-reflections-mobile-detail-denver", nextdoor: "", igFeedOn: false },
-  booking: { notifyEmail: "carsonhanna5@gmail.com", photoUploadOn: true, payLink: "", payLabel: "Pay a deposit to lock your spot", payOn: false, tipLink: "", reviewLink: "", emailjs: { serviceId: "service_qj7j8hm", templateId: "template_e0co2tf", publicKey: "uTfhhwQkCNGvQdNli" } },
+  booking: { notifyEmail: "carsonhanna5@gmail.com", photoUploadOn: true, payLink: "", payLabel: "Pay a deposit to lock your spot", payOn: false, reviewLink: "", emailjs: { serviceId: "service_qj7j8hm", templateId: "template_e0co2tf", publicKey: "uTfhhwQkCNGvQdNli" } },
   availability: {
     slotMode: "windows",
     slots: ["Morning (9–12)", "Midday (12–3)", "Afternoon (3–7)"],
@@ -297,12 +297,12 @@ function renderSocial() {
     if (s.yelp) add(s.yelp, "Yelp");
     if (s.nextdoor) add(s.nextdoor, "Nextdoor");
   }
-  // IG feed
+  // IG feed section is not implemented (no free profile-feed embed) — keep it hidden; the Instagram link above is the real IG entry point
   const feed = document.querySelector("#igFeed");
-  if (feed) feed.hidden = !(content.social.igFeedOn && content.social.ig);
+  if (feed) feed.hidden = true;
 }
 function applySectionVisibility() {
-  const map = { pricing: "#pricing", work: "#work", story: "#story", reviews: "#reviewsSection", area: "#area", igfeed: "#igFeed" };
+  const map = { pricing: "#pricing", work: "#work", story: "#story", reviews: "#reviewsSection", area: "#area" };
   for (const key in map) {
     const el = document.querySelector(map[key]);
     if (el) el.hidden = !content.sections[key];
@@ -407,10 +407,6 @@ async function maybeShowTrack() {
     const status = document.createElement("div"); status.className = "trk-status trk-" + (b.status || "new"); status.textContent = ({ new: "Requested — we'll confirm shortly", confirmed: "Confirmed", done: "Completed" })[b.status || "new"]; body.appendChild(status);
     row("Name", b.name); row("Package", b.package); row("Vehicle", b.vehicle);
     row("Estimate", b.estimate); row("Date", b.date); row("Time", b.time); row("Where", b.address); row("Notes", b.notes);
-    const tip = safeUrl(content?.booking?.tipLink || "");
-    if (tip && (b.status === "done" || b.status === "confirmed")) {
-      const t = document.createElement("a"); t.className = "crbtn crbtn-primary"; t.href = tip; t.target = "_blank"; t.rel = "noopener noreferrer"; t.textContent = "Leave a tip"; body.appendChild(t);
-    }
     const call = document.createElement("a"); call.className = "crbtn crbtn-primary"; call.href = "tel:+1" + (content?.business?.phone || "").replace(/\D/g, ""); call.textContent = "Call us"; body.appendChild(call);
   } catch (e) { console.warn("track failed", e); }
 }

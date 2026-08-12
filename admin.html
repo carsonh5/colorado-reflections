@@ -28,6 +28,8 @@ a{color:inherit}
 .btn-danger{background:#3a1618;border-color:#5a2327;color:#ff9aa2}
 .btn-block{width:100%}
 .msg{min-height:1.1em;font-size:.85rem;margin:4px 0 0}
+.savebar{position:sticky;bottom:14px;z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 10px 34px rgba(0,0,0,.5)}
+.savebar .msg{margin:0}
 .fld-in{padding:10px 12px;background:#0f1114;border:1px solid var(--line);border-radius:8px;color:#fff;font-size:.92rem;font-family:inherit;min-width:0}
 .av-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .av-row:last-child{border-bottom:none}
@@ -111,6 +113,8 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
   .av-add .fld-in{min-width:0;width:100%}
   .av-add .btn{width:100%}
   .msg{margin-bottom:6px}
+  .savebar{bottom:calc(72px + env(safe-area-inset-bottom))}
+  .savebar .btn{flex:1}
 }
 </style>
 </head>
@@ -255,7 +259,7 @@ function customersFromBookings(){
 }
 function renderOverview(){
   const g=document.getElementById("adminGreet");
-  if(g) g.textContent = (content.business && content.business.owner) ? ("Welcome, "+content.business.owner+".") : "Welcome back.";
+  if(g) g.textContent = "Welcome back.";
   const custs=customersFromBookings();
   const revenue=bookings.reduce((s,b)=>s+priceNum(b.estimate),0);
   const stats=[["New bookings",bookings.filter(b=>(b.status||"new")==="new").length],["Total bookings",bookings.length],["Customers",custs.length],["Repeat",custs.filter(c=>c.count>1).length],["Est. pipeline",money(revenue)]];
@@ -353,7 +357,7 @@ function renderAvailability(){
       <label class="fld">Earliest a customer can book <select id="avLead"><option value="0">Same day</option><option value="1">1 day ahead</option><option value="2">2 days ahead</option><option value="3">3 days ahead</option></select></label>
       <label class="fld">How far out they can book <select id="avHorizon"><option value="14">2 weeks</option><option value="30">1 month</option><option value="60">2 months</option><option value="90">3 months</option></select></label>
     </div>
-    <div class="card" style="grid-column:1/-1"><button class="btn btn-primary btn-block" id="avSave">Save availability</button><p class="msg" id="avMsg"></p></div>`;
+    <div class="savebar" style="grid-column:1/-1"><button class="btn btn-primary" id="avSave">Save availability</button><button class="btn" id="avCancel">Cancel</button><span class="msg" id="avMsg"></span></div>`;
   $("#avLead").value=String(a.leadDays); $("#avHorizon").value=String([14,30,60,90].includes(a.horizonDays)?a.horizonDays:60);
   // wire
   $("#slotList").querySelectorAll("[data-slot]").forEach(inp=>inp.oninput=()=>{a.slots[+inp.dataset.slot]=inp.value;markDirty();});
@@ -363,6 +367,7 @@ function renderAvailability(){
   $("#slotPreH").onclick=()=>{a.slots=["8:00","9:00","10:00","11:00","12:00","1:00","2:00","3:00","4:00","5:00"];markDirty();renderAvailability();};
   $("#availGrid").querySelectorAll("[data-day]").forEach(cb=>cb.onchange=()=>{a.openDays[+cb.dataset.day]=cb.checked;markDirty();});
   $("#avLead").onchange=markDirty; $("#avHorizon").onchange=markDirty;
+  $("#avCancel").onclick=()=>{ if(!dirty || confirm("Discard your unsaved changes?")){ dirty=false; loadAll(); } };
   $("#availGrid").querySelectorAll("[data-vacdel]").forEach(b=>b.onclick=()=>{a.vacations.splice(+b.dataset.vacdel,1);markDirty();renderAvailability();});
   $("#vacAdd").onclick=()=>{const s=$("#vacStart").value;if(!s){$("#avMsg").textContent="Pick a start date.";return;}a.vacations.push({start:s,end:$("#vacEnd").value||s,label:$("#vacLabel").value.trim()});markDirty();renderAvailability();};
   $("#availGrid").querySelectorAll("[data-blkdel]").forEach(b=>b.onclick=()=>{a.blocked.splice(+b.dataset.blkdel,1);markDirty();renderAvailability();});
@@ -426,16 +431,15 @@ function renderSettings(){
       <label class="fld">Facebook URL <input id="sFb"></label>
       <label class="fld">Yelp URL <input id="sYelp"></label>
       <label class="fld">Nextdoor URL <input id="sNd"></label>
-      <div class="togg"><span>Show Instagram feed</span><input id="sIgFeed" type="checkbox"></div>
     </div>
     <div class="card"><h3>Operations</h3>
-      <label class="fld">Hours <input id="sHours"></label>
+      <label class="fld">Hours (shown in your site footer) <input id="sHours"></label>
+      <p class="hint" style="margin:-6px 0 12px">This is just the text shown on your site. Your actual bookable days &amp; times are set under <b>Availability</b>.</p>
       <label class="fld">Booking notifications go to <input id="sNotify" placeholder="you@email.com"></label>
-      <p class="hint" style="margin:-6px 0 12px">We email you here every time someone requests a booking.</p>
-      <label class="fld">Accent color <input id="sAccent" type="color"></label>
+      <p class="hint" style="margin:-6px 0 0">We email you here every time someone requests a booking.</p>
     </div>
     <div class="card"><h3>Sections shown on your site</h3>
-      ${[["pricing","Pricing & quote builder"],["work","Photo gallery"],["story","About me / owner story"],["reviews","Customer reviews"],["area","Service area map"],["igfeed","Instagram feed"]].map(k=>`<div class="togg"><span>${k[1]}</span><input data-sec="${k[0]}" type="checkbox"></div>`).join("")}
+      ${[["pricing","Pricing & quote builder"],["work","Photo gallery"],["story","About me / owner story"],["reviews","Customer reviews"],["area","Service area map"]].map(k=>`<div class="togg"><span>${k[1]}</span><input data-sec="${k[0]}" type="checkbox"></div>`).join("")}
     </div>
     <div class="card"><h3>Email notifications</h3>
       <p class="hint" id="ejStatus"></p>
@@ -447,10 +451,9 @@ function renderSettings(){
       <label class="fld">Stripe Payment Link URL <input id="sPayLink" placeholder="https://buy.stripe.com/..."></label>
       <label class="fld">Button label <input id="sPayLabel" placeholder="Pay a deposit to lock your spot"></label>
     </div>
-    <div class="card"><h3>Reviews &amp; tips</h3>
-      <p class="hint">Paste your Google review link and a tip link (Venmo, Cash App or PayPal.me). Customers see a <b>Leave a tip</b> button on their booking page, and you can one-tap <b>Ask for a review</b> on finished jobs under Bookings.</p>
+    <div class="card"><h3>Reviews</h3>
+      <p class="hint">Paste your Google review link. On finished jobs you can one-tap <b>Ask for a review</b> under Bookings, and we'll email the customer this link.</p>
       <label class="fld">Google review link <input id="sReviewLink" placeholder="https://g.page/r/..."></label>
-      <label class="fld">Tip link <input id="sTipLink" placeholder="https://venmo.com/u/yourname"></label>
     </div>
     <div class="card"><h3>Storage</h3><div class="meter"><span style="width:${pct}%;${pct>80?'background:var(--accent)':''}"></span></div>
       <p class="hint">${kb} KB of 1024 KB used — this holds your site's text, settings and photos.${pct>80?" <b style='color:var(--accent)'>Getting full — remove a photo or two before adding more.</b>":""}</p></div>
@@ -459,22 +462,23 @@ function renderSettings(){
       <p class="hint">To connect a domain: point its DNS to GitHub Pages and add a CNAME. Ask us and we'll set it up.</p></div>
     <div class="card"><h3>Website help</h3>
       <p class="hint">Questions or changes to the site? Text <b>Carson at 901-652-7778</b> — happy to help anytime.</p></div>
-    <div class="card" style="grid-column:1/-1"><button class="btn btn-primary btn-block" id="sSave">Save settings</button><p class="msg" id="sMsg"></p></div>`;
+    <div class="savebar" style="grid-column:1/-1"><button class="btn btn-primary" id="sSave">Save settings</button><button class="btn" id="sCancel">Cancel</button><span class="msg" id="sMsg"></span></div>`;
   const set=(id,v)=>{const e=$("#"+id); if(e)e.value=v||"";};
-  set("sIg",s.ig);set("sFb",s.fb);set("sYelp",s.yelp);set("sNd",s.nextdoor);$("#sIgFeed").checked=!!s.igFeedOn;
-  set("sHours",content.hours);set("sNotify",b.notifyEmail);$("#sAccent").value=(content.brand&&content.brand.accent)||"#E5362E";
+  set("sIg",s.ig);set("sFb",s.fb);set("sYelp",s.yelp);set("sNd",s.nextdoor);
+  set("sHours",content.hours);set("sNotify",b.notifyEmail);
   { const ej=b.emailjs||{}, ok=!!(ej.serviceId&&ej.templateId&&ej.publicKey), es=$("#ejStatus");
     if(es){ es.innerHTML = ok ? "<b style='color:var(--ok)'>On</b> — booking &amp; promo emails are active." : "<b style='color:var(--accent)'>Off</b> — contact us to switch email on."; } }
   document.querySelectorAll("[data-sec]").forEach(cb=>cb.checked=!!sec[cb.dataset.sec]);
   $("#sPayOn").checked=!!b.payOn; set("sPayLink",b.payLink); set("sPayLabel",b.payLabel);
-  set("sReviewLink",b.reviewLink); set("sTipLink",b.tipLink);
+  set("sReviewLink",b.reviewLink);
   $("#settingsGrid").addEventListener("input",markDirty); $("#settingsGrid").addEventListener("change",markDirty);
+  $("#sCancel").onclick=()=>{ if(!dirty || confirm("Discard your unsaved changes?")){ dirty=false; loadAll(); } };
   $("#sPw").onclick=()=>sendPasswordResetEmail(auth,user.email).then(()=>alert("Reset link sent to "+user.email)).catch(e=>alert("Failed: "+e.code));
   $("#sSave").onclick=async()=>{
-    s.ig=$("#sIg").value.trim();s.fb=$("#sFb").value.trim();s.yelp=$("#sYelp").value.trim();s.nextdoor=$("#sNd").value.trim();s.igFeedOn=$("#sIgFeed").checked;
-    content.hours=$("#sHours").value.trim(); b.notifyEmail=$("#sNotify").value.trim(); (content.brand=content.brand||{}).accent=$("#sAccent").value;
+    s.ig=$("#sIg").value.trim();s.fb=$("#sFb").value.trim();s.yelp=$("#sYelp").value.trim();s.nextdoor=$("#sNd").value.trim();
+    content.hours=$("#sHours").value.trim(); b.notifyEmail=$("#sNotify").value.trim();
     b.payOn=$("#sPayOn").checked; b.payLink=$("#sPayLink").value.trim(); b.payLabel=$("#sPayLabel").value.trim();
-    b.reviewLink=$("#sReviewLink").value.trim(); b.tipLink=$("#sTipLink").value.trim();
+    b.reviewLink=$("#sReviewLink").value.trim();
     document.querySelectorAll("[data-sec]").forEach(cb=>sec[cb.dataset.sec]=cb.checked);
     $("#sMsg").textContent="Saving…";
     try{ await setDoc(siteRef,content,{merge:true}); dirty=false; $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); }
