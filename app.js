@@ -751,14 +751,16 @@ async function saveContent() {
   try {
     // Preserve fields the admin dashboard owns (availability, booking settings) in case they
     // were changed after this page loaded — the inline editor never edits them, so keep the freshest copy.
+    let priorData = null;
     try {
       const fresh = await getDoc(siteRef);
       if (fresh.exists()) {
-        const fd = fresh.data();
-        if (fd.availability) content.availability = fd.availability;
-        if (fd.booking) content.booking = deepMerge(content.booking || {}, fd.booking);
+        priorData = fresh.data();
+        if (priorData.availability) content.availability = priorData.availability;
+        if (priorData.booking) content.booking = deepMerge(content.booking || {}, priorData.booking);
       }
     } catch (e) { /* offline / read blocked — fall through and save what we have */ }
+    if (priorData) await saveVersion(priorData, "Before a site edit");   // snapshot prior state so this edit can be undone
     await setDoc(siteRef, content, { merge: false });
     dirty = false;
     btn.textContent = "Saved";
@@ -769,6 +771,19 @@ async function saveContent() {
     alert("Save failed: " + e.code + "\n" + e.message);
   }
 }
+
+/* ---- version history: snapshot prior states so the owner can revert ---- */
+async function saveVersion(dataObj, note) {
+  if (!currentUser || !dataObj) return;
+  try {
+    await addDoc(collection(db, "sites", SITE_ID, "versions"), { content: dataObj, note: note || "", ts: serverTimestamp() });
+    // keep only the most recent 10
+    const snap = await getDocs(query(collection(db, "sites", SITE_ID, "versions"), orderBy("ts", "desc")));
+    const docs = []; snap.forEach(d => docs.push(d));
+    for (let i = 10; i < docs.length; i++) { try { await deleteDoc(docs[i].ref); } catch (e) {} }
+  } catch (e) { console.warn("version snapshot failed", e); }
+}
+window.__CR_saveVersion = saveVersion;
 
 window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
