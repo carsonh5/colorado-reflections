@@ -291,7 +291,7 @@ function renderSocial() {
       a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = label;
       box.appendChild(a);
     };
-    if (s.ig) add("https://instagram.com/" + String(s.ig).replace(/^@/, "").replace(/[^A-Za-z0-9_.]/g, ""), "Instagram");
+    if (s.ig) { const ig = String(s.ig).trim(); add(/^https?:\/\//i.test(ig) ? ig : "https://instagram.com/" + ig.replace(/^@/, "").replace(/[^A-Za-z0-9_.]/g, ""), "Instagram"); }
     if (s.fb) add(s.fb, "Facebook");
     if (s.yelp) add(s.yelp, "Yelp");
     if (s.nextdoor) add(s.nextdoor, "Nextdoor");

@@ -28,7 +28,8 @@ a{color:inherit}
 .btn-danger{background:#3a1618;border-color:#5a2327;color:#ff9aa2}
 .btn-block{width:100%}
 .msg{min-height:1.1em;font-size:.85rem;margin:4px 0 0}
-.savebar{position:sticky;bottom:14px;z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 10px 34px rgba(0,0,0,.5)}
+.savebar{position:sticky;bottom:14px;z-index:20;display:none;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 10px 34px rgba(0,0,0,.5)}
+body.dirty .savebar{display:flex}
 .savebar .msg{margin:0}
 .fld-in{padding:10px 12px;background:#0f1114;border:1px solid var(--line);border-radius:8px;color:#fff;font-size:.92rem;font-family:inherit;min-width:0}
 .av-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -155,7 +156,7 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
   <main>
     <div class="topbar">
       <h2 id="viewTitle">Overview</h2>
-      <div class="right"><span class="hint" id="whoami"></span><a class="btn" id="mView" href="./index.html" target="_blank" title="View live site"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a><a class="btn btn-primary" id="mEdit" href="./index.html?edit=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit site</a></div>
+      <div class="right"><span class="hint" id="whoami"></span><a class="btn" id="mView" href="./index.html" target="_blank" title="View live site"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg> View</a><a class="btn btn-primary" id="mEdit" href="./index.html?edit=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit site</a></div>
     </div>
 
     <section class="view on" id="v-overview">
@@ -213,7 +214,8 @@ const priceNum = e => { const m=/\d[\d,]*/.exec(String(e||"")); return m?+m[0].r
 const xSvg = () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
 
 let content=null, bookings=[], user=null, dirty=false;
-const markDirty=()=>{dirty=true;};
+const markDirty=()=>{dirty=true;document.body.classList.add("dirty");};
+const clearDirty=()=>{dirty=false;document.body.classList.remove("dirty");};
 
 /* ---- auth ---- */
 $("#lGo").onclick = () => { $("#lMsg").textContent="Signing in…"; signInWithEmailAndPassword(auth,$("#lEmail").value.trim(),$("#lPw").value).catch(e=>$("#lMsg").textContent="Sign in failed ("+e.code+")."); };
@@ -242,7 +244,7 @@ async function loadAll(){
 const TITLES={overview:"Overview",bookings:"Bookings",availability:"Availability",customers:"Customers",promos:"Promos",settings:"Settings"};
 function showView(v){
   if(dirty && !confirm("You have unsaved changes on this page. Leave without saving?")) return;
-  dirty=false;
+  clearDirty();
   document.querySelectorAll(".navlink, #tabbar a").forEach(x=>x.classList.toggle("active", x.dataset.view===v));
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
   $("#v-"+v).classList.add("on");
@@ -367,7 +369,7 @@ function renderAvailability(){
   $("#slotPreH").onclick=()=>{a.slots=["8:00","9:00","10:00","11:00","12:00","1:00","2:00","3:00","4:00","5:00"];markDirty();renderAvailability();};
   $("#availGrid").querySelectorAll("[data-day]").forEach(cb=>cb.onchange=()=>{a.openDays[+cb.dataset.day]=cb.checked;markDirty();});
   $("#avLead").onchange=markDirty; $("#avHorizon").onchange=markDirty;
-  $("#avCancel").onclick=()=>{ if(!dirty || confirm("Discard your unsaved changes?")){ dirty=false; loadAll(); } };
+  $("#avCancel").onclick=()=>{ clearDirty(); loadAll(); };
   $("#availGrid").querySelectorAll("[data-vacdel]").forEach(b=>b.onclick=()=>{a.vacations.splice(+b.dataset.vacdel,1);markDirty();renderAvailability();});
   $("#vacAdd").onclick=()=>{const s=$("#vacStart").value;if(!s){$("#avMsg").textContent="Pick a start date.";return;}a.vacations.push({start:s,end:$("#vacEnd").value||s,label:$("#vacLabel").value.trim()});markDirty();renderAvailability();};
   $("#availGrid").querySelectorAll("[data-blkdel]").forEach(b=>b.onclick=()=>{a.blocked.splice(+b.dataset.blkdel,1);markDirty();renderAvailability();});
@@ -376,7 +378,7 @@ function renderAvailability(){
     a.leadDays=+$("#avLead").value; a.horizonDays=+$("#avHorizon").value;
     a.slots=a.slots.map(s=>String(s).trim()).filter(Boolean);
     $("#avMsg").style.color="var(--muted)";$("#avMsg").textContent="Saving…";
-    try{ await setDoc(siteRef,{availability:a},{merge:true}); dirty=false; $("#avMsg").style.color="var(--ok)";$("#avMsg").textContent="Saved"; }
+    try{ await setDoc(siteRef,{availability:a},{merge:true}); $("#avMsg").style.color="var(--ok)";$("#avMsg").textContent="Saved"; setTimeout(clearDirty,1400); }
     catch(e){ $("#avMsg").style.color="var(--accent)";$("#avMsg").textContent="Save failed: "+(e.code||e.message); }
   };
 }
@@ -430,7 +432,7 @@ function renderSettings(){
       <label class="fld">Business name <input id="sName"></label>
       <label class="fld">Phone (tap-to-call &amp; text) <input id="sPhone" placeholder="(303) 555-0199"></label>
       <label class="fld">Public email (shown on site) <input id="sEmail" placeholder="you@email.com"></label>
-      <label class="fld">Instagram handle <input id="sIg"></label>
+      <label class="fld">Instagram (@handle or full URL) <input id="sIg" placeholder="@colorado_reflections_detail"></label>
       <label class="fld">Facebook URL <input id="sFb"></label>
       <label class="fld">Yelp URL <input id="sYelp"></label>
       <label class="fld">Nextdoor URL <input id="sNd"></label>
@@ -476,7 +478,7 @@ function renderSettings(){
   $("#sPayOn").checked=!!b.payOn; set("sPayLink",b.payLink); set("sPayLabel",b.payLabel);
   set("sReviewLink",b.reviewLink);
   $("#settingsGrid").addEventListener("input",markDirty); $("#settingsGrid").addEventListener("change",markDirty);
-  $("#sCancel").onclick=()=>{ if(!dirty || confirm("Discard your unsaved changes?")){ dirty=false; loadAll(); } };
+  $("#sCancel").onclick=()=>{ clearDirty(); loadAll(); };
   $("#sPw").onclick=()=>sendPasswordResetEmail(auth,user.email).then(()=>alert("Reset link sent to "+user.email)).catch(e=>alert("Failed: "+e.code));
   $("#sSave").onclick=async()=>{
     biz.name=$("#sName").value.trim()||biz.name; biz.phone=$("#sPhone").value.trim(); biz.email=$("#sEmail").value.trim();
@@ -486,7 +488,7 @@ function renderSettings(){
     b.reviewLink=$("#sReviewLink").value.trim();
     document.querySelectorAll("[data-sec]").forEach(cb=>sec[cb.dataset.sec]=cb.checked);
     $("#sMsg").textContent="Saving…";
-    try{ await setDoc(siteRef,content,{merge:true}); dirty=false; $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); }
+    try{ await setDoc(siteRef,content,{merge:true}); $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); setTimeout(clearDirty,1400); }
     catch(e){ $("#sMsg").style.color="var(--accent)";$("#sMsg").textContent="Save failed: "+(e.code||e.message); }
   };
 }
