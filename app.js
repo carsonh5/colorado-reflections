@@ -530,7 +530,8 @@ function decorateRemovers() {
   document.querySelectorAll("[data-remove]").forEach(item => {
     if (item.querySelector(":scope > .cr-remove")) return;
     const btn = document.createElement("button");
-    btn.className = "cr-remove"; btn.type = "button"; btn.textContent = "×"; btn.title = "Remove";
+    btn.className = "cr-remove"; btn.type = "button"; btn.title = "Remove";
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" width="11" height="11"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
     btn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); removeItem(item.dataset.remove); };
     item.appendChild(btn);
   });
@@ -564,11 +565,12 @@ function tagStaticText() {
   content.textOverrides = content.textOverrides || {};
   const dyn = ["pkgTiers", "pkgCompare", "addonList", "vehSeg", "workGrid", "reviewList", "areaCities", "socialLinks", "crOwnerBar", "crDrawer", "est", "estNote", "priceLive", "sumLines", "bkSummary", "bkDoneNote", "confirmBody", "thumbs", "map", "igFeedMount"];
   const inDyn = (el) => { let n = el; while (n) { if (n.id && dyn.includes(n.id)) return true; n = n.parentElement; } return false; };
-  const sel = "h1,h2,h3,h4,p,li,cite,em,.over,.build-label,.est-label,.est-fine,.price-note,.foot-h";
+  const sel = "h1,h2,h3,h4,p,li,cite,em,a,button,.over,.build-label,.est-label,.est-fine,.price-note,.foot-h,.foot-note,.tier-name";
   let n = 0;
   document.querySelectorAll(sel).forEach(el => {
     if (el.hasAttribute("data-field") || el.hasAttribute("data-edit") || el.hasAttribute("data-ekey")) return;
-    if (el.closest("[data-field],[data-edit]")) return;
+    if (el.hasAttribute("data-phone") || el.hasAttribute("data-email") || el.getAttribute("aria-hidden") === "true") return;
+    if (el.closest("[data-field],[data-edit],#bk,#lb,#crOwnerBar,#crDrawer,#crHeroEd")) return;
     if (inDyn(el)) return;
     const hasDirectText = [...el.childNodes].some(c => c.nodeType === 3 && c.textContent.trim());
     if (!hasDirectText) return;
@@ -578,6 +580,13 @@ function tagStaticText() {
   });
 }
 function markDirty() { dirty = true; }
+function focusLast(sel) {
+  const els = document.querySelectorAll(sel); const el = els[els.length - 1];
+  if (!el) return;
+  el.focus();
+  try { const r = document.createRange(); r.selectNodeContents(el); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); } catch (e) {}
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+}
 
 function enableStructuralControls() {
   // add/remove buttons for packages, addons, gallery, reviews, cities
@@ -585,7 +594,7 @@ function enableStructuralControls() {
   addAdder("#addonList", "Add add-on", () => { content.addons.push({ id: "a" + Date.now(), label: "New add-on", add: 25 }); renderAddons(); reEnter(); });
   addAdder("#workGrid", "Add photo", () => addPhoto());
   addAdder("#reviewList", "Add review", () => { content.reviews.push({ name: "Customer", text: "Great work!", source: "" }); renderReviews(); reEnter(); });
-  addAdder("#areaCities", "Add city", () => { content.area.cities.push("City"); renderCities(); reEnter(); });
+  addAdder("#areaCities", "Add city", () => { content.area.cities.push("New city"); renderCities(); reEnter(); focusLast("#areaCities li"); });
 }
 function reEnter() { // re-apply edit affordances after a re-render
   if (!editMode) return;
@@ -951,7 +960,11 @@ function injectOwnerStyles() {
   body.cr-editing [data-edit],body.cr-editing [data-ekey]{outline:1px dashed rgba(46,134,242,.7);outline-offset:2px;cursor:text;min-height:1em}
   body.cr-editing [data-edit]:focus,body.cr-editing [data-ekey]:focus{outline:2px solid #2E86F2;background:rgba(46,134,242,.08)}
   body.cr-editing .mobile-bar{display:none}
-  .cr-remove{position:absolute;top:-8px;right:-8px;z-index:5;width:22px;height:22px;border-radius:50%;background:#E5362E;color:#fff;border:2px solid #0c0d10;font:700 13px/1 system-ui;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .cr-remove{position:absolute;top:-9px;right:-9px;z-index:6;width:24px;height:24px;border-radius:50%;background:#20242b;color:#cbd4de;border:1px solid #3a4048;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s,color .15s,transform .1s}
+  .cr-remove:hover{background:#E5362E;color:#fff;border-color:#E5362E;transform:scale(1.08)}
+  .cr-remove svg{display:block}
+  body.cr-editing #areaCities{gap:18px 16px}
+  body.cr-editing #areaCities li{overflow:visible}
   body.cr-editing .cr-removable{position:relative}
   .cr-edit-hint{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9998;background:#2E86F2;color:#fff;padding:8px 16px;border-radius:20px;font:600 13px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.4)}
   body.cr-editing a:not([data-edit]):not([data-ekey]):not(.cr-remove):not(.cr-adder),body.cr-editing button:not(.cr-remove):not(.cr-adder):not(#crSaveBtn):not(#crDone){pointer-events:none}
