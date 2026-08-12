@@ -199,7 +199,7 @@ main{padding:24px clamp(16px,3vw,36px);max-width:1000px}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const SITE_ID = "colorado-reflections";
 const OWNERS = ["corefmobiledetail@gmail.com","carsonhanna5@gmail.com"];
@@ -211,34 +211,6 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&
 const money = n => "$"+Number(n).toLocaleString();
 const priceNum = e => { const m=/\d[\d,]*/.exec(String(e||"")); return m?+m[0].replace(/,/g,""):0; };
 const xSvg = () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
-
-// snapshot the current stored site into versions/ so it can be restored; keep last 10
-async function loadVersions(){
-  const el=$("#verList"); if(!el) return;
-  try{
-    const snap=await getDocs(query(collection(db,"sites",SITE_ID,"versions"),orderBy("ts","desc")));
-    const rows=[]; snap.forEach(d=>rows.push({id:d.id,...d.data()}));
-    if(!rows.length){ el.innerHTML='<p class="hint">No backups yet — they start after your next save.</p>'; return; }
-    el.innerHTML=rows.map(r=>{const t=(r.ts&&r.ts.toDate)?r.ts.toDate().toLocaleString():'Backup';return `<div class="av-row"><span class="av-label">${esc(t)}<div class="sub">${esc(r.note||'')}</div></span><button class="btn" data-restore="${r.id}">Restore</button></div>`;}).join('');
-    el.querySelectorAll("[data-restore]").forEach(b=>b.onclick=async()=>{
-      const r=rows.find(x=>x.id===b.dataset.restore); if(!r||!r.content)return;
-      if(!confirm("Restore this version? Your current site content is replaced (a backup of the current version is kept)."))return;
-      b.disabled=true;b.textContent="Restoring…";
-      try{ await snapshotPrior("Before a restore"); await setDoc(siteRef,r.content,{merge:false}); await loadAll(); alert("Restored. Open your site to see it."); }
-      catch(e){ b.disabled=false;b.textContent="Restore"; alert("Restore failed: "+(e.code||e.message)); }
-    });
-  }catch(e){ el.innerHTML='<p class="hint">Backups need a quick Firestore rules update — ask Carson to enable them.</p>'; }
-}
-async function snapshotPrior(note){
-  try{
-    const cur = await getDoc(siteRef);
-    if(!cur.exists()) return;
-    await addDoc(collection(db,"sites",SITE_ID,"versions"),{content:cur.data(),note:note||"",ts:serverTimestamp()});
-    const snap=await getDocs(query(collection(db,"sites",SITE_ID,"versions"),orderBy("ts","desc")));
-    const docs=[]; snap.forEach(d=>docs.push(d));
-    for(let i=10;i<docs.length;i++){ try{ await deleteDoc(docs[i].ref); }catch(e){} }
-  }catch(e){ console.warn("snapshot failed",e); }
-}
 
 let content=null, bookings=[], user=null, dirty=false;
 const markDirty=()=>{dirty=true;};
@@ -404,7 +376,7 @@ function renderAvailability(){
     a.leadDays=+$("#avLead").value; a.horizonDays=+$("#avHorizon").value;
     a.slots=a.slots.map(s=>String(s).trim()).filter(Boolean);
     $("#avMsg").style.color="var(--muted)";$("#avMsg").textContent="Saving…";
-    try{ await snapshotPrior("Before availability change"); await setDoc(siteRef,{availability:a},{merge:true}); dirty=false; $("#avMsg").style.color="var(--ok)";$("#avMsg").textContent="Saved"; }
+    try{ await setDoc(siteRef,{availability:a},{merge:true}); dirty=false; $("#avMsg").style.color="var(--ok)";$("#avMsg").textContent="Saved"; }
     catch(e){ $("#avMsg").style.color="var(--accent)";$("#avMsg").textContent="Save failed: "+(e.code||e.message); }
   };
 }
@@ -491,9 +463,6 @@ function renderSettings(){
     <div class="card"><h3>Account & domain</h3>
       <button class="btn btn-block" id="sPw" style="margin-bottom:10px">Send me a password reset link</button>
       <p class="hint">To connect a domain: point its DNS to GitHub Pages and add a CNAME. Ask us and we'll set it up.</p></div>
-    <div class="card" style="grid-column:1/-1"><h3>Version history</h3>
-      <p class="hint">Every save keeps an automatic backup. If something looks wrong, restore a recent version — a backup of the current one is kept too.</p>
-      <div id="verList"><p class="hint">Loading…</p></div></div>
     <div class="card"><h3>Website help</h3>
       <p class="hint">Questions or changes to the site? Text <b>Carson at 901-652-7778</b> — happy to help anytime.</p></div>
     <div class="savebar" style="grid-column:1/-1"><button class="btn btn-primary" id="sSave">Save settings</button><button class="btn" id="sCancel">Cancel</button><span class="msg" id="sMsg"></span></div>`;
@@ -508,7 +477,6 @@ function renderSettings(){
   set("sReviewLink",b.reviewLink);
   $("#settingsGrid").addEventListener("input",markDirty); $("#settingsGrid").addEventListener("change",markDirty);
   $("#sCancel").onclick=()=>{ if(!dirty || confirm("Discard your unsaved changes?")){ dirty=false; loadAll(); } };
-  loadVersions();
   $("#sPw").onclick=()=>sendPasswordResetEmail(auth,user.email).then(()=>alert("Reset link sent to "+user.email)).catch(e=>alert("Failed: "+e.code));
   $("#sSave").onclick=async()=>{
     biz.name=$("#sName").value.trim()||biz.name; biz.phone=$("#sPhone").value.trim(); biz.email=$("#sEmail").value.trim();
@@ -518,7 +486,7 @@ function renderSettings(){
     b.reviewLink=$("#sReviewLink").value.trim();
     document.querySelectorAll("[data-sec]").forEach(cb=>sec[cb.dataset.sec]=cb.checked);
     $("#sMsg").textContent="Saving…";
-    try{ await snapshotPrior("Before settings change"); await setDoc(siteRef,content,{merge:true}); dirty=false; $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); }
+    try{ await setDoc(siteRef,content,{merge:true}); dirty=false; $("#sMsg").style.color="var(--ok)";$("#sMsg").textContent="Saved"; renderPromoMeta(); }
     catch(e){ $("#sMsg").style.color="var(--accent)";$("#sMsg").textContent="Save failed: "+(e.code||e.message); }
   };
 }
