@@ -39,7 +39,7 @@ const DEFAULT_CONTENT = {
     nameSub: "Mobile Detail",
     phone: "(303) 589-8214",
     email: "corefmobiledetail@gmail.com",
-    license: "86-1229005",
+    license: "",   // hidden until James confirms a real, public license # — "86-1229005" was EIN-formatted (tax ID), pulled from listing DD; do NOT publish an EIN
     owner: "James"
   },
   hero: {
@@ -170,7 +170,11 @@ function hydrate() {
   });
   setText("business.phonePlain", c.business.phone);
   document.querySelectorAll('[data-email]').forEach(el => { el.setAttribute("href", "mailto:" + c.business.email); el.textContent = c.business.email; });
-  setText("business.license", "Lic. " + c.business.license);
+  document.querySelectorAll('[data-field="business.license"]').forEach(el => {
+    const lic = (c.business.license || "").trim();
+    el.textContent = lic ? "Lic. " + lic : "";
+    el.style.display = lic ? "" : "none";
+  });
 
   // hero
   setText("hero.headline", c.hero.headline);
@@ -184,7 +188,8 @@ function hydrate() {
   setText("pricingLead", c.pricingLead);
   setText("workHeading", c.workHeading);
   setText("area.lead", c.area.lead);
-  setText("hours", c.hours);
+  // hours: render as a clean stacked schedule (split on " · ") so a long string doesn't orphan-wrap
+  document.querySelectorAll('[data-field="hours"]').forEach(el => { el.innerHTML = String(c.hours || "").split(" · ").map(esc).join("<br>"); });
 
   // packages, addons, gallery, reviews, cities: rendered by dedicated renderers
   renderPackages();
@@ -684,7 +689,7 @@ function collectEdits() {
   // simple [data-field] text fields (hero, story, etc.) mirror to content too
   const fieldMap = {
     "hero.headline": ["hero", "headline"], "hero.em": ["hero", "em"], "hero.sub": ["hero", "sub"], "hero.mark": ["hero", "mark"],
-    "pricingLead": ["pricingLead"], "workHeading": ["workHeading"], "area.lead": ["area", "lead"], "hours": ["hours"],
+    "pricingLead": ["pricingLead"], "workHeading": ["workHeading"], "area.lead": ["area", "lead"],
     "story.over": ["story", "over"], "story.quote": ["story", "quote"], "story.cite": ["story", "cite"], "business.nameSub": ["business", "nameSub"]
   };
   for (const f in fieldMap) {

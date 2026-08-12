@@ -439,6 +439,8 @@ function renderSettings(){
     <div class="card"><h3>Account & domain</h3>
       <button class="btn btn-block" id="sPw" style="margin-bottom:10px">Send me a password reset link</button>
       <p class="hint">To connect a domain: point its DNS to GitHub Pages and add a CNAME. Ask us and we'll set it up.</p></div>
+    <div class="card"><h3>Website help</h3>
+      <p class="hint">Questions or changes to the site? Text <b>Carson at 901-652-7778</b> — happy to help anytime.</p></div>
     <div class="card" style="grid-column:1/-1"><button class="btn btn-primary btn-block" id="sSave">Save settings</button><p class="msg" id="sMsg"></p></div>`;
   const set=(id,v)=>{const e=$("#"+id); if(e)e.value=v||"";};
   set("sIg",s.ig);set("sFb",s.fb);set("sYelp",s.yelp);set("sNd",s.nextdoor);$("#sIgFeed").checked=!!s.igFeedOn;
